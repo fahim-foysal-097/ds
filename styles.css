@@ -1,0 +1,2424 @@
+/* ==========================================================================
+   NINTENDO DS RETRO PORTFOLIO STYLESHEET (v4.0)
+   Official ds.css Integration + Pixel-Perfect CSS Nintendo DS Console
+   (Adapted directly from Alexandra Radevich's pure CSS model)
+   ========================================================================== */
+
+@import url('assets/css/ds.css');
+
+:root {
+  /* DS System Fonts */
+  --font-ds-system: 'ds-system', -apple-system, BlinkMacSystemFont, "Segoe UI", monospace;
+  --font-ds-clock: 'ds-clock', monospace;
+
+  /* Theme Color (Default: DS Classic Blue #0059f3) */
+  --ds-theme-color: #0059f3;
+  --ds-theme-dark: #003db3;
+  --ds-theme-light: #6699ff;
+  --ds-theme-glow: rgba(0, 89, 243, 0.25);
+
+  /* Page Colors */
+  --ds-page-bg: #f8fafc;
+  --ds-text-main: #0f172a;
+  --ds-text-muted: #64748b;
+  --ds-panel-bg: #ffffff;
+  --ds-panel-border: #cbd5e1;
+
+  /* Console Model Colors (Classic Polar White Theme) */
+  --ds-chassis: #f6f8fa;
+  --ds-shadow: #cbd5e1;
+  --ds-black: #1e293b;
+  --ds-dpad-border: #475569;
+}
+
+/* ==========================================================================
+   Base & Stylus Cursor & Scrollbars
+   ========================================================================== */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  min-height: 100vh;
+  font-family: var(--font-ds-system);
+  color: var(--ds-text-main);
+  background-color: var(--ds-page-bg);
+  overflow-x: hidden;
+  line-height: 1.5;
+  image-rendering: pixelated;
+}
+
+/* Custom Retro Scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #e2e8f0;
+  border-left: 1px solid #cbd5e1;
+}
+::-webkit-scrollbar-thumb {
+  background: #94a3b8;
+  border: 2px solid #e2e8f0;
+  border-radius: 2px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--ds-theme-color);
+}
+
+/* Simple Retro Square Cursor */
+body, button, a, input, select, textarea, canvas, .clickable {
+  cursor: url('assets/images/ds/cursor-square.svg') 5 5, crosshair !important;
+}
+
+body:active, button:active, a:active, input:active, canvas:active {
+  cursor: url('assets/images/ds/cursor-square-active.svg') 5 5, crosshair !important;
+}
+
+/* Focus Visible Accessibility */
+:focus-visible {
+  outline: 2px dashed var(--ds-theme-color);
+  outline-offset: 2px;
+}
+
+/* ==========================================================================
+   Continuous Authentic Nintendo DS Grid Asset Background (High-Performance 60fps)
+   ========================================================================== */
+.ds-moving-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -10;
+  pointer-events: none;
+  background-color: #f1f5f9;
+  overflow: hidden;
+  contain: strict;
+  transform: translateZ(0);
+  transition: background-color 0.3s ease;
+}
+
+.ds-moving-bg::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: calc(100% + 192px);
+  height: calc(100% + 192px);
+  background-image: url('assets/images/ds/grid_lg.png');
+  background-repeat: repeat;
+  background-size: 96px 96px;
+  will-change: transform;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: translate3d(0, 0, 0);
+  animation: dsMoveGrid 3.5s linear infinite;
+}
+
+@keyframes dsMoveGrid {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-96px, -96px, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ds-moving-bg::before {
+    animation: none;
+  }
+  * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+/* Container Utility */
+.ds-container {
+  width: 100%;
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+/* Section Common Styling */
+.ds-section {
+  padding: 56px 0;
+  position: relative;
+}
+
+.ds-section-header-flex {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.ds-section-title {
+  font-size: 26px;
+  font-weight: 900;
+  color: var(--ds-theme-color);
+  margin: 0 0 6px 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  letter-spacing: 0.5px;
+}
+
+.ds-section-subtitle {
+  font-size: 14px;
+  color: var(--ds-text-muted);
+  margin: 0;
+}
+
+/* ==========================================================================
+   Nintendo DS Top Navigation Bar & Mobile Menu
+   ========================================================================== */
+.ds-navbar {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  background: rgba(255, 255, 255, 0.96);
+  backdrop-filter: blur(8px);
+  border-bottom: 2px solid #000000;
+  z-index: 1000;
+  padding: 8px 0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.ds-navbar-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.ds-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  font-size: 19px;
+  font-weight: 900;
+  color: var(--ds-text-main);
+  letter-spacing: 1px;
+}
+
+.ds-brand-badge {
+  background: var(--ds-theme-color);
+  color: white;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: 12px;
+  border: 1px solid #000;
+}
+
+.ds-nav-menu {
+  display: flex;
+  align-items: center;
+}
+
+.ds-nav-links {
+  display: flex;
+  align-items: center;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  gap: 6px;
+}
+
+.ds-nav-link {
+  text-decoration: none;
+  font-size: 12.5px;
+  font-weight: bold;
+  color: var(--ds-text-main);
+  padding: 5px 10px;
+  border-radius: 4px;
+  border: 1px solid transparent;
+  transition: all 0.12s ease;
+}
+
+.ds-nav-link:hover {
+  background: #f1f5f9;
+  border-color: var(--ds-panel-border);
+  color: var(--ds-theme-color);
+}
+
+.ds-nav-link.active {
+  background: var(--ds-theme-color);
+  color: #ffffff;
+  border: 1px solid #000000;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+.ds-nav-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.ds-nav-clock {
+  font-family: var(--font-ds-clock);
+  font-size: 15px;
+  background: #ffffff;
+  padding: 3px 8px;
+  border: 2px solid #000000;
+  box-shadow: #d3d3d3 0 0 0 1px, #e3e3e3 0 0 0 2px;
+  color: var(--ds-theme-color);
+  letter-spacing: 1px;
+  font-weight: bold;
+}
+
+/* Audio wave bars indicator inside nav */
+.ds-wave-bars {
+  display: none;
+  align-items: flex-end;
+  gap: 2px;
+  height: 12px;
+}
+
+.ds-wave-bars.active {
+  display: inline-flex;
+}
+
+.ds-wave-bars span {
+  width: 2px;
+  background: #ffffff;
+  border-radius: 1px;
+  animation: dsAudioWave 0.6s ease-in-out infinite alternate;
+}
+
+.ds-wave-bars span:nth-child(2) { animation-delay: 0.2s; }
+.ds-wave-bars span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes dsAudioWave {
+  from { height: 3px; }
+  to { height: 12px; }
+}
+
+/* Override ds.css global button dimensions */
+button {
+  width: auto;
+  max-width: 100%;
+  height: auto;
+}
+
+/* ==========================================================================
+   High-Contrast Authentic DS Buttons
+   ========================================================================== */
+.ds-btn-system {
+  position: relative;
+  width: auto;
+  height: auto;
+  background: #ffffff;
+  color: #0f172a;
+  border: 2px solid #000000;
+  border-radius: 3px;
+  box-shadow: 0 2px 0 #808080;
+  font-family: var(--font-ds-system), 'ds-system', monospace;
+  font-size: 12px;
+  font-weight: 700;
+  padding: 5px 12px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-decoration: none;
+  user-select: none;
+  transition: transform 0.08s ease, background 0.12s ease, filter 0.12s ease, box-shadow 0.08s ease;
+}
+
+.ds-btn-system:hover {
+  background: #f1f5f9;
+  color: var(--ds-theme-color);
+}
+
+.ds-btn-system:active {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 transparent;
+}
+
+/* Primary High-Contrast Theme Button */
+.ds-btn-system.primary {
+  background-color: var(--ds-theme-color) !important;
+  color: #ffffff !important;
+  border: 2px solid #000000 !important;
+  box-shadow: 0 2px 0 #000000 !important;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.4);
+}
+
+.ds-btn-system.primary:hover {
+  filter: brightness(1.14);
+  color: #ffffff !important;
+}
+
+.ds-btn-system.primary:active {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 transparent !important;
+}
+
+/* Modern Website Green Link Button */
+.ds-btn-system.modern-link {
+  background-color: #059669 !important;
+  color: #ffffff !important;
+  border: 2px solid #000000 !important;
+  box-shadow: 0 2px 0 #064e3b !important;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.3);
+}
+
+.ds-btn-system.modern-link:hover {
+  filter: brightness(1.12);
+  color: #ffffff !important;
+}
+
+.ds-btn-system.modern-link:active {
+  transform: translateY(2px);
+  box-shadow: 0 0 0 transparent !important;
+}
+
+/* Mini Button Utility for Cartridges & Console */
+.ds-btn-mini {
+  width: auto !important;
+  height: auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  font-size: 8px !important;
+  padding: 2px 5px !important;
+  box-shadow: 0 1px 0 #808080 !important;
+  line-height: 1.2;
+}
+
+/* ==========================================================================
+   ds.css Alert Box & Hero Section
+   ========================================================================== */
+.ds-alert-card {
+  border-style: solid;
+  border-width: 15px;
+  border-image: url('assets/images/ds/alert_border.png') 15;
+  background-color: #ffffff;
+  padding: 26px;
+  box-shadow: 6px 6px 0px rgba(0, 0, 0, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: relative;
+}
+
+.ds-status-bar-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.ds-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f0fdf4;
+  color: #16a34a;
+  border: 1px solid #bbf7d0;
+  padding: 3px 10px;
+  border-radius: 16px;
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.ds-status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #22c55e;
+  box-shadow: 0 0 6px #22c55e;
+}
+
+.ds-firmware-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #cbd5e1;
+  padding: 3px 10px;
+  border-radius: 16px;
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.ds-hero-title {
+  font-size: 38px;
+  font-weight: 900;
+  line-height: 1.2;
+  margin: 0;
+  color: #0f172a;
+}
+
+.ds-hero-subtitle {
+  font-size: 15px;
+  color: var(--ds-text-muted);
+  max-width: 760px;
+  margin: 0;
+  line-height: 1.6;
+}
+
+/* Quick specs row */
+.ds-hero-specs-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.ds-spec-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 4px 10px;
+  font-size: 11.5px;
+  color: #334155;
+  box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.05);
+}
+
+.ds-spec-chip i {
+  color: var(--ds-theme-color);
+  font-size: 14px;
+}
+
+.ds-hero-ctas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+/* ==========================================================================
+   About Section & DS Calendar + Analog Clock Widget
+   ========================================================================== */
+.ds-profile-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  grid-gap: 24px;
+}
+
+.ds-panel-box {
+  background: #ffffff;
+  border-style: solid;
+  border-width: 6px;
+  border-image-slice: 6 fill;
+  border-image-source: url('assets/images/ds/info_border.png');
+  padding: 18px;
+  box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.1);
+}
+
+.ds-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.ds-panel-tag {
+  background: #e2e8f0;
+  color: #475569;
+  font-size: 9px;
+  font-weight: 900;
+  padding: 2px 6px;
+  border-radius: 2px;
+}
+
+.ds-stats-bar-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.ds-stat-row {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ds-stat-label {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11.5px;
+  font-weight: bold;
+}
+
+.ds-stat-val {
+  color: var(--ds-theme-color);
+}
+
+.ds-bar-track {
+  width: 100%;
+  height: 10px;
+  background: #e2e8f0;
+  border: 1px solid #000000;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.ds-bar-fill {
+  height: 100%;
+  background: var(--ds-theme-color);
+  transition: width 0.5s ease;
+}
+
+/* ==========================================================================
+   AUTHENTIC BOXY DS.CSS CLOCK & CALENDAR WIDGETS
+   ========================================================================== */
+.ds-calendar-clock-wrapper {
+  background: #ffffff;
+  border: 2px solid #000000;
+  box-shadow: #d3d3d3 0px 0px 0px 2px, #e3e3e3 0px 0px 0px 4px;
+  padding: 24px 20px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-around;
+  gap: 28px;
+  max-width: 680px;
+  margin: 0 auto;
+}
+
+/* Boxy Clock */
+.ds-clock-component {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.ds-clock-box {
+  position: relative;
+  width: 194px;
+  height: 194px;
+  border: 2px solid #000000;
+  background: rgba(255, 255, 255, 0.6);
+  box-shadow: #d3d3d3 0px 0px 0px 2px, #e3e3e3 0px 0px 0px 4px;
+  overflow: hidden;
+  user-select: none;
+}
+
+.ds-clock-hands-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.ds-clock-center-pivot {
+  position: relative;
+  width: 10px;
+  height: 10px;
+  background: #000000;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.ds-clock-hand {
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  margin-left: -2px;
+  width: 4px;
+  transform-origin: bottom center;
+  border-radius: 0;
+  image-rendering: pixelated;
+}
+
+.ds-clock-hand.ds-hour-hand {
+  height: 48px;
+  background: #494949;
+  z-index: 1;
+}
+
+.ds-clock-hand.ds-minute-hand {
+  height: 64px;
+  background: #494949;
+  z-index: 2;
+}
+
+.ds-clock-hand.ds-second-hand {
+  height: 72px;
+  background: var(--ds-theme-color, #0059f3);
+  z-index: 3;
+}
+
+.ds-clock-numbers-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  font-family: var(--font-ds-clock), 'ds-clock', monospace;
+  font-size: 40px;
+  line-height: 1;
+  letter-spacing: -0.05em;
+  color: #000000;
+  padding: 6px 4px;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.ds-clock-num-12 {
+  padding-top: 4px;
+}
+
+.ds-clock-middle-row {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  padding: 0 4px;
+}
+
+.ds-clock-num-6 {
+  padding-bottom: 2px;
+}
+
+.ds-clock-dots-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 0;
+  pointer-events: none;
+  z-index: 4;
+}
+
+.ds-clock-dots-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.ds-dots-row-1 { width: 50%; height: 20%; }
+.ds-dots-row-2 { width: 83.33%; height: 20%; }
+.ds-clock-dots-spacer { height: 20%; }
+.ds-dots-row-3 { width: 83.33%; height: 20%; }
+.ds-dots-row-4 { width: 50%; height: 20%; }
+
+.ds-clock-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: #808080;
+}
+
+/* Boxy Calendar */
+.ds-calendar-component {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 234px;
+}
+
+.ds-calendar-month-bar {
+  height: 32px;
+  width: 226px;
+  background: #ffffff;
+  border: 2px solid #c3c3c3;
+  text-align: center;
+  font-family: var(--font-ds-system), 'ds-system', monospace;
+  font-size: 17.4px;
+  font-weight: bold;
+  letter-spacing: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #000000;
+  z-index: 2;
+  margin-bottom: -2px;
+}
+
+.ds-calendar-box {
+  width: 234px;
+  border: 2px solid #000000;
+  box-shadow: #d3d3d3 0px 0px 0px 2px, #e3e3e3 0px 0px 0px 4px;
+  background: #000000;
+}
+
+.ds-calendar-weekdays-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  background: #000000;
+  border-bottom: 2px solid #000000;
+}
+
+.ds-cal-day-header {
+  height: 28px;
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-ds-system), 'ds-system', monospace;
+  font-size: 14.5px;
+  letter-spacing: 1px;
+  background: #808080;
+}
+
+.ds-cal-day-header.sunday { background: #ba4900; }
+.ds-cal-day-header.saturday { background: #0059f3; }
+
+.ds-calendar-cells-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  background: #000000;
+}
+
+.ds-cal-cell {
+  height: 24px;
+  background: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-ds-system), 'ds-system', monospace;
+  font-size: 13px;
+  color: #000000;
+}
+
+.ds-cal-cell.empty { background: #e3e3e3; }
+.ds-cal-cell.sunday { background: #fba2eb; color: #790000; }
+.ds-cal-cell.saturday { background: #82aafb; color: #000082; }
+.ds-cal-cell.today {
+  background: var(--ds-theme-color, #0059f3) !important;
+  color: #ffffff !important;
+  font-weight: bold;
+}
+
+/* ==========================================================================
+   Filter Pills & Search Controls
+   ========================================================================== */
+.ds-filter-pill-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.ds-filter-pill {
+  width: auto !important;
+  height: auto !important;
+  border: 2px solid #000000;
+  background: #ffffff;
+  color: #334155;
+  font-family: var(--font-ds-system);
+  font-size: 11px;
+  font-weight: bold;
+  padding: 3px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.12s ease;
+  box-shadow: 0 1px 0 #808080;
+}
+
+.ds-filter-pill:hover {
+  background: #f1f5f9;
+  border-color: var(--ds-theme-color);
+  color: var(--ds-theme-color);
+}
+
+.ds-filter-pill.active {
+  background: var(--ds-theme-color);
+  color: #ffffff;
+  box-shadow: 0 2px 0 #000000;
+}
+
+.ds-search-bar-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.ds-search-box {
+  position: relative;
+  flex: 1;
+  max-width: 480px;
+  display: flex;
+  align-items: center;
+}
+
+.ds-search-icon {
+  position: absolute;
+  left: 10px;
+  color: #64748b;
+  font-size: 16px;
+  pointer-events: none;
+}
+
+.ds-search-input {
+  width: 100%;
+  border: 2px solid #000000;
+  border-radius: 4px;
+  padding: 7px 32px 7px 34px;
+  font-family: var(--font-ds-system);
+  font-size: 12.5px;
+  background: #ffffff;
+  color: #0f172a;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.ds-search-input:focus {
+  border-color: var(--ds-theme-color);
+  outline: none;
+}
+
+.ds-search-clear-btn {
+  position: absolute;
+  right: 8px;
+  background: transparent;
+  border: none;
+  font-size: 16px;
+  font-weight: bold;
+  color: #94a3b8;
+  cursor: pointer;
+}
+
+.ds-search-clear-btn:hover {
+  color: #0f172a;
+}
+
+.ds-cartridge-count-badge {
+  font-size: 11px;
+  font-weight: bold;
+  color: #64748b;
+  background: #e2e8f0;
+  padding: 3px 8px;
+  border-radius: 4px;
+}
+
+/* ==========================================================================
+   Skills Section: DS Inventory Items
+   ========================================================================== */
+.ds-inventory-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  grid-gap: 14px;
+}
+
+.ds-inventory-card {
+  background: #ffffff;
+  border: 2px solid #000000;
+  border-radius: 4px;
+  padding: 14px 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  text-align: center;
+  box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.08);
+  transition: transform 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+.ds-inventory-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--ds-theme-color);
+  box-shadow: 2px 6px 0 rgba(0, 0, 0, 0.12);
+}
+
+.ds-inv-icon {
+  font-size: 28px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ds-inv-name {
+  font-size: 12.5px;
+  font-weight: bold;
+  color: var(--ds-text-main);
+}
+
+.ds-inv-sub {
+  font-size: 10px;
+  color: var(--ds-text-muted);
+}
+
+/* ==========================================================================
+   PROJECTS SECTION: AUTHENTIC NINTENDO DS CARTRIDGES
+   ========================================================================== */
+.ds-cartridge-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  grid-gap: 28px;
+  padding: 10px 0;
+}
+
+.ds-cartridge-card {
+  position: relative;
+  width: 100%;
+  max-width: 250px;
+  margin: 0 auto;
+  aspect-ratio: 571 / 600;
+  cursor: pointer;
+  perspective: 900px;
+  transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1), filter 0.22s ease;
+}
+
+.ds-cartridge-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  background: linear-gradient(135deg, rgba(255,255,255,0.3) 0%, transparent 40%, rgba(255,255,255,0.08) 100%);
+  pointer-events: none;
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+  z-index: 6;
+}
+
+.ds-cartridge-card:hover {
+  transform: translateY(-8px) rotateX(7deg) scale(1.03);
+  filter: drop-shadow(0 14px 20px rgba(0, 0, 0, 0.24));
+}
+
+.ds-cartridge-card:hover::after {
+  opacity: 1;
+}
+
+.ds-cartridge-card:active {
+  transform: translateY(-2px) scale(0.98);
+}
+
+.ds-cartridge-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.ds-cartridge-frame {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 5;
+  pointer-events: none;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.15));
+}
+
+.ds-cartridge-sticker {
+  position: absolute;
+  top: 20.8%;
+  left: 12.8%;
+  width: 74.3%;
+  height: 65.2%;
+  z-index: 2;
+  background: #ffffff;
+  border-radius: 2px 2px 14px 14px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border: 1px solid #cbd5e1;
+  box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.1);
+}
+
+.ds-sticker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 8px;
+  font-weight: 900;
+  color: #475569;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 2px;
+}
+
+.ds-sticker-art {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  gap: 4px;
+  padding: 4px 0;
+}
+
+.ds-sticker-icon {
+  font-size: 30px;
+  color: var(--ds-theme-color);
+}
+
+.ds-sticker-title {
+  font-size: 13px;
+  font-weight: 900;
+  color: #0f172a;
+  text-align: center;
+  line-height: 1.1;
+}
+
+.ds-sticker-badge {
+  background: #e0f2fe;
+  color: #0369a1;
+  font-size: 8px;
+  font-weight: bold;
+  padding: 1px 5px;
+  border-radius: 2px;
+}
+
+.ds-sticker-footer {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 2px;
+}
+
+.ds-sticker-esrb {
+  font-size: 9px;
+  font-weight: 900;
+  background: #000;
+  color: #fff;
+  width: 14px;
+  height: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 1px;
+}
+
+.ds-sticker-code {
+  font-size: 8px;
+  color: #64748b;
+  font-weight: bold;
+}
+
+/* ==========================================================================
+   Modern HTML5 <dialog> Project Details Modal (Game Manual)
+   ========================================================================== */
+dialog.ds-modal-dialog {
+  border: none;
+  background: transparent;
+  padding: 0;
+  max-width: 640px;
+  width: 92%;
+  margin: auto;
+  border-radius: 8px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 8px 10px -6px rgba(0, 0, 0, 0.4);
+  overflow: visible;
+  transition: opacity 0.2s ease, transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), overlay 0.2s ease allow-discrete, display 0.2s ease allow-discrete;
+  opacity: 0;
+  transform: scale(0.96);
+}
+
+dialog.ds-modal-dialog[open] {
+  opacity: 1;
+  transform: scale(1);
+}
+
+@starting-style {
+  dialog.ds-modal-dialog[open] {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+}
+
+dialog.ds-modal-dialog::backdrop {
+  background: rgba(15, 23, 42, 0.68);
+  backdrop-filter: blur(4px);
+  transition: opacity 0.2s ease, overlay 0.2s ease allow-discrete, display 0.2s ease allow-discrete;
+  opacity: 0;
+}
+
+dialog.ds-modal-dialog[open]::backdrop {
+  opacity: 1;
+}
+
+@starting-style {
+  dialog.ds-modal-dialog[open]::backdrop {
+    opacity: 0;
+  }
+}
+
+.ds-modal-box {
+  background: #ffffff;
+  border: 3px solid #000000;
+  border-radius: 8px;
+  width: 100%;
+  max-height: 88vh;
+  overflow-y: auto;
+  box-shadow: 6px 6px 0px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+}
+
+.ds-modal-header {
+  background: var(--ds-theme-color);
+  color: white;
+  padding: 10px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 2px solid #000000;
+}
+
+.ds-modal-header h3 {
+  margin: 0;
+  font-size: 14px;
+  letter-spacing: 0.5px;
+}
+
+.ds-modal-close-btn {
+  background: #ffffff;
+  color: #000000;
+  border: 2px solid #000000;
+  border-radius: 3px;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.ds-modal-close-btn:hover {
+  background: #ef4444;
+  color: #ffffff;
+}
+
+.ds-modal-body {
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ds-modal-project-meta {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.ds-modal-cart-thumb {
+  width: 68px;
+  height: 72px;
+  background: #f1f5f9;
+  border: 2px solid #000;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  color: var(--ds-theme-color);
+  flex-shrink: 0;
+}
+
+.ds-manual-serial-pill {
+  font-family: var(--font-ds-system);
+  font-size: 10px;
+  font-weight: bold;
+  background: #e2e8f0;
+  color: #475569;
+  padding: 2px 6px;
+  border-radius: 3px;
+  border: 1px solid #cbd5e1;
+}
+
+.ds-modal-tags-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+/* Booklet Tabs */
+.ds-manual-tabs-bar {
+  display: flex;
+  border-bottom: 2px solid #000000;
+  gap: 4px;
+  padding-bottom: 0;
+}
+
+.ds-manual-tab {
+  background: #e2e8f0;
+  border: 2px solid #000000;
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+  padding: 5px 12px;
+  font-family: var(--font-ds-system);
+  font-size: 11px;
+  font-weight: bold;
+  color: #475569;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-bottom: -2px;
+}
+
+.ds-manual-tab:hover {
+  background: #f1f5f9;
+}
+
+.ds-manual-tab.active {
+  background: #ffffff;
+  color: var(--ds-theme-color);
+  border-color: #000000;
+  border-bottom: 2px solid #ffffff;
+  z-index: 2;
+}
+
+.ds-manual-tab-content {
+  display: none;
+  padding: 8px 0;
+}
+
+.ds-manual-tab-content.active {
+  display: block;
+}
+
+.ds-manual-section-heading {
+  margin: 4px 0 8px 0;
+  font-size: 12px;
+  color: var(--ds-theme-color);
+  letter-spacing: 0.5px;
+}
+
+.ds-modal-desc-text {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: #334155;
+}
+
+.ds-specs-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.ds-spec-item {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  padding: 6px 10px;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+}
+
+.ds-spec-key {
+  font-size: 9px;
+  font-weight: bold;
+  color: #64748b;
+}
+
+.ds-spec-val {
+  font-size: 12px;
+  font-weight: bold;
+  color: #0f172a;
+}
+
+.ds-controls-list {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 13px;
+  color: #334155;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Booklet Prev / Next Bar */
+.ds-booklet-nav-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #f1f5f9;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  padding: 6px 10px;
+}
+
+.ds-booklet-counter {
+  font-size: 11px;
+  font-weight: bold;
+  color: #64748b;
+}
+
+.ds-modal-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 12px;
+}
+
+/* ==========================================================================
+   ALEXANDRA RADEVICH PURE CSS NINTENDO DS MODEL (PIXEL-PERFECT)
+   ========================================================================== */
+.ds-lounge-wrapper {
+  background: #ffffff;
+  border: 3px solid #000000;
+  border-radius: 12px;
+  padding: 32px 20px;
+  box-shadow: 6px 6px 0px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 24px;
+  width: 100%;
+}
+
+.ds-console-stage {
+  position: relative;
+  width: 414px;
+  height: 431px;
+  margin: 0 auto;
+  user-select: none;
+}
+
+.nintendo-ds {
+  width: 414px;
+  height: 431px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  user-select: none;
+}
+
+.top-screen {
+  position: absolute;
+  width: 100%;
+  height: 46.5%;
+  border-radius: 15px 15px 5px 5px;
+  background: var(--ds-chassis);
+  box-shadow: 
+    inset 10px 10px 12px -2px var(--ds-shadow),
+    inset -2px 5px 3px 1px var(--ds-shadow),
+    inset -5px 5px 5px 2px white,
+    0px -1px 2px 2px #b58688;
+}
+
+.screen {
+  position: absolute;
+  width: 51.5%;
+  height: 83.5%;
+  border-radius: 3px;
+  top: 9.5%;
+  left: 24%;
+  box-shadow: 0px 0px 3px 0px #875f68;
+  overflow: hidden;
+}
+
+.screen::after {
+  position: absolute;
+  content: "";
+  width: 91%;
+  height: 87%;
+  box-shadow: 0px 0px 1px 2px rgba(0, 0, 0, 0.5);
+  left: 4%;
+  top: 6%;
+  background: #494949;
+  background: linear-gradient(323deg, #494949 42%, #f5f3f5 85%);
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.15;
+}
+
+.speaker-hole {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  background: var(--ds-black);
+  border-radius: 2.5px;
+}
+
+.speaker-hole::after {
+  position: absolute;
+  content: "";
+  height: 5px;
+  width: 5px;
+  border-radius: 2.5px;
+  background: var(--ds-black);
+  left: 16px;
+}
+
+.speaker-hole::before {
+  position: absolute;
+  content: "";
+  height: 5px;
+  width: 5px;
+  border-radius: 2.5px;
+  background: var(--ds-black);
+  left: 31px;
+}
+
+#sh1 { left: 30px; top: 94px; }
+#sh2 { left: 30px; top: 110px; }
+#sh3 { left: 346px; top: 95px; }
+#sh4 { left: 346px; top: 110px; }
+
+.hinge {
+  position: absolute;
+  width: 99.5%;
+  top: 46.5%;
+  height: 28px;
+  border-radius: 25px;
+  z-index: 3;
+  background: #e3a7b2;
+  background: linear-gradient(0deg, #cbd5e1 0%, #f1f5f9 10%, #ffffff 65%, #cbd5e1 100%);
+  box-shadow: 0px 5px 10px -1px rgba(0,0,0,0.15);
+}
+
+.hinge::after {
+  position: absolute;
+  content: "";
+  width: 2px;
+  height: 100%;
+  background: #94a3b8;
+  left: 49px;
+}
+
+.hinge::before {
+  position: absolute;
+  content: "";
+  width: 2px;
+  height: 100%;
+  background: #94a3b8;
+  left: 364px;
+}
+
+.mic {
+  position: absolute;
+  width: 4px;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--ds-black);
+  left: 49.5%;
+  top: 8px;
+}
+
+.light {
+  position: absolute;
+  height: 67%;
+  width: 4px;
+  top: 12%;
+  border-radius: 10px;
+  right: 25px;
+  background: linear-gradient(0deg, #6a5752 0%, #cdbaba 65%, #6a5752 100%);
+}
+
+.light::after {
+  content: "";
+  position: absolute;
+  height: 100%;
+  width: 4px;
+  top: 0;
+  border-radius: 10px;
+  left: 8px;
+  background: #22c55e;
+  box-shadow: 0 0 5px #22c55e;
+}
+
+.bottom-screen {
+  position: absolute;
+  width: 99.5%;
+  height: 50%;
+  bottom: 0;
+  border-radius: 3px 3px 14px 14px;
+  background: var(--ds-chassis);
+  box-shadow: 0px 1px 2px 2px #b58688;
+}
+
+.bottom-screen .screen {
+  top: 24px;
+  height: 168px;
+  width: 52%;
+  background: #ffffff;
+  z-index: 2;
+}
+
+.bottom-screen .screen::after {
+  background: #494949;
+  background: linear-gradient(140deg, #494949 42%, #f5f3f5 85%);
+  opacity: 0.1;
+}
+
+.bottom-screen .screen::before {
+  content: "";
+  position: absolute;
+  width: 102%;
+  height: 109%;
+  left: -1%;
+  top: -7%;
+  z-index: -1;
+  border-radius: 5px;
+  box-shadow: 10px 7px 10px 3px var(--ds-shadow), -6px 4px 5px 2px var(--ds-chassis), -12px 4px 8px 3px #ffffff;
+}
+
+/* ==========================================================================
+   Authentic Symmetrical D-Pad & Controls (from @aradevich mdRYzyJ)
+   ========================================================================== */
+.d-pad {
+  position: absolute;
+  width: 18px;
+  height: 54px;
+  background: var(--ds-chassis);
+  border-radius: 3px;
+  left: 38px;
+  top: 75px;
+  border: 2px solid #967178;
+  box-shadow: 2px 2px 4px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  z-index: 4;
+  box-sizing: content-box;
+  transition: transform 0.08s ease;
+}
+
+.d-pad:active {
+  transform: scale(0.96);
+}
+
+/* Symmetrical Horizontal Cross Arm */
+.d-pad::before {
+  content: "";
+  position: absolute;
+  width: 54px;
+  height: 18px;
+  top: 16px;
+  left: -20px;
+  background: var(--ds-chassis);
+  border: 2px solid #967178;
+  border-radius: 3px;
+  box-sizing: content-box;
+}
+
+/* Center Cross Filler */
+.d-pad::after {
+  content: "";
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  top: 18px;
+  left: 0px;
+  background: var(--ds-chassis);
+  z-index: 3;
+}
+
+.d-pad-marker {
+  position: absolute;
+  background: #ffe3e4;
+  z-index: 5;
+  border-radius: 1px;
+}
+
+#dpm1 {
+  top: 4px;
+  left: 8px;
+  width: 2px;
+  height: 9px;
+}
+
+#dpm2 {
+  top: 41px;
+  left: 8px;
+  width: 2px;
+  height: 9px;
+}
+
+#dpm3 {
+  top: 24px;
+  left: 23px;
+  width: 9px;
+  height: 2px;
+}
+
+#dpm4 {
+  top: 24px;
+  left: -14px;
+  width: 9px;
+  height: 2px;
+}
+
+/* Symmetrical Diamond Face Buttons (X, Y, A, B) */
+.button {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 1.5px solid var(--ds-shadow);
+  background: #ffffff;
+  box-shadow: 2px 2px 3px -1px #bf8691, inset 1px 1px 2px #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-ds-main);
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+  text-align: center;
+  cursor: pointer;
+  z-index: 5;
+  user-select: none;
+  transition: transform 0.08s ease, background 0.08s ease, box-shadow 0.08s ease;
+}
+
+.button:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 1px -1px #bf8691, inset 1px 1px 2px rgba(0, 0, 0, 0.18);
+  background: #e2e8f0;
+}
+
+#X {
+  right: 36px;
+  top: 52px;
+  color: #0284c7;
+}
+
+#Y {
+  right: 60px;
+  top: 76px;
+  color: #10b981;
+}
+
+#A {
+  right: 12px;
+  top: 76px;
+  color: #ef4444;
+}
+
+#B {
+  right: 36px;
+  top: 100px;
+  color: #f59e0b;
+}
+
+/* Small Hardware Buttons (START & SELECT) */
+.small-button {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  box-sizing: border-box;
+  border-radius: 50%;
+  border: 1.5px solid #bd8993;
+  background: #cbd5e1;
+  box-shadow: 1px 1px 2px -1px #bf8691;
+  cursor: pointer;
+  z-index: 5;
+  transition: transform 0.08s ease;
+}
+
+.small-button:active {
+  transform: translate(1px, 1px);
+  background: #94a3b8;
+}
+
+#start {
+  right: 52px;
+  bottom: 24px;
+}
+
+#select {
+  right: 52px;
+  bottom: 9px;
+}
+
+#start::after {
+  content: "START";
+  position: absolute;
+  left: 14px;
+  top: 0px;
+  font-size: 7px;
+  font-weight: 900;
+  font-family: var(--font-ds-system);
+  color: #64748b;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+#select::after {
+  content: "SELECT";
+  position: absolute;
+  left: 14px;
+  top: 0px;
+  font-size: 7px;
+  font-weight: 900;
+  font-family: var(--font-ds-system);
+  color: #64748b;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+/* ==========================================================================
+   DS Console Screen Applications (Top & Bottom Screens)
+   ========================================================================== */
+.ds-screen-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Top Screen UI */
+.ds-top-screen-ui {
+  background: linear-gradient(180deg, #ffffff 0%, #e2e8f0 100%);
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 6px;
+  font-size: 11px;
+}
+
+.ds-top-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #cbd5e1;
+  padding-bottom: 2px;
+}
+
+.ds-top-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 3px;
+  transition: all 0.2s ease;
+}
+
+.ds-top-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #cbd5e1;
+  padding: 2px 4px;
+  font-size: 8px;
+  border-radius: 2px;
+  font-weight: bold;
+}
+
+/* Bottom Screen Views */
+.ds-view {
+  display: none;
+  width: 100%;
+  height: 100%;
+  flex-direction: column;
+}
+
+.ds-view.active {
+  display: flex;
+}
+
+/* Splash Boot Overlay */
+.ds-splash-screen {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #ffffff;
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+}
+
+.ds-splash-screen.hidden {
+  display: none;
+}
+
+.ds-boot-pulse-text {
+  font-size: 8px;
+  color: #64748b;
+  animation: dsPulse 1.2s infinite;
+}
+
+@keyframes dsPulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+/* DSi Carousel Menu */
+.dsi-menu-view {
+  background: #f1f5f9;
+  justify-content: space-between;
+  padding: 6px;
+}
+
+.dsi-menu-header {
+  font-size: 9px;
+  font-weight: bold;
+  color: var(--ds-theme-color);
+  text-align: center;
+  border-bottom: 1px solid #cbd5e1;
+  padding-bottom: 2px;
+  letter-spacing: 0.5px;
+}
+
+.dsi-carousel {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 0;
+}
+
+.dsi-app-icon {
+  width: 44px;
+  height: 44px;
+  background: #ffffff;
+  border: 2px solid #000000;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  cursor: pointer;
+  box-shadow: 1px 1px 0 #000;
+  transition: transform 0.1s ease, border-color 0.1s ease;
+}
+
+.dsi-app-icon:hover {
+  transform: translateY(-2px);
+  border-color: var(--ds-theme-color);
+}
+
+.dsi-app-name {
+  font-size: 7px;
+  font-weight: bold;
+  margin-top: 1px;
+}
+
+.dsi-menu-tip {
+  font-size: 7.5px;
+  color: #64748b;
+  text-align: center;
+}
+
+/* PictoChat Screen (Constrained & Fitted without vertical overflow) */
+.pictochat-view {
+  background: #ffffff;
+  display: none;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.picto-header {
+  height: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f1f5f9;
+  border-bottom: 1px solid #cbd5e1;
+  padding: 0 4px;
+  font-size: 8px;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.picto-feed {
+  height: 52px;
+  max-height: 52px;
+  background: #f8fafc;
+  border-bottom: 1px dashed #cbd5e1;
+  overflow-y: auto;
+  padding: 3px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.picto-bubble {
+  border: 1px solid #cbd5e1;
+  border-radius: 2px;
+  background: #ffffff;
+  padding: 2px 4px;
+  font-size: 8px;
+  line-height: 1.3;
+}
+
+#pictoCanvas {
+  width: 100%;
+  height: 50px;
+  background: #ffffff;
+  cursor: crosshair;
+  touch-action: none;
+  display: block;
+  flex-shrink: 0;
+}
+
+.picto-toolbar {
+  height: 26px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 2px 4px;
+  background: #e2e8f0;
+  border-top: 1px solid #cbd5e1;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+.picto-tools-left {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.picto-toolbar button {
+  width: auto !important;
+  height: auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  padding: 2px 4px !important;
+  font-size: 7px !important;
+}
+
+/* Snake Game Screen */
+.snake-view {
+  background: #0f172a;
+  padding: 4px;
+  justify-content: space-between;
+  align-items: center;
+  position: relative;
+}
+
+.snake-header {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: #22c55e;
+  font-size: 8px;
+  font-weight: bold;
+}
+
+#snakeCanvas {
+  background: #0f172a;
+  border: 1px solid #334155;
+  display: block;
+}
+
+.snake-game-over-overlay {
+  position: absolute;
+  top: 24px;
+  left: 12px;
+  right: 12px;
+  bottom: 20px;
+  background: rgba(15, 23, 42, 0.92);
+  border: 2px solid #ef4444;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  z-index: 10;
+  text-align: center;
+}
+
+.snake-footer-bar {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  font-size: 7.5px;
+  color: #94a3b8;
+}
+
+/* Sound & Jukebox Screen */
+.sound-view {
+  background: #f8fafc;
+  padding: 4px 6px;
+  justify-content: space-between;
+}
+
+.sound-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #cbd5e1;
+  padding-bottom: 2px;
+  font-size: 8px;
+  font-weight: bold;
+}
+
+.sound-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px;
+  margin: 4px 0;
+}
+
+.ds-sound-test-btn {
+  width: auto !important;
+  height: auto !important;
+  min-width: 0 !important;
+  font-size: 7.5px !important;
+  padding: 3px 4px !important;
+  justify-content: flex-start !important;
+}
+
+.sound-bgm-bar {
+  border-top: 1px solid #cbd5e1;
+  padding-top: 3px;
+}
+
+/* 16 Official Nintendo DS Circular Color Swatches */
+.ds-theme-selector-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.ds-theme-selector-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.ds-theme-label {
+  font-size: 13px;
+  font-weight: bold;
+  color: var(--ds-text-main);
+}
+
+.ds-theme-sub {
+  font-size: 11px;
+  color: var(--ds-text-muted);
+}
+
+/* ==========================================================================
+   Authentic Nintendo DS Favorite Color Chooser (ds.css .button-square)
+   ========================================================================== */
+.ds-palette-swatches {
+  display: grid;
+  grid-template-columns: repeat(8, 34px);
+  gap: 8px;
+  justify-content: center;
+  align-items: center;
+  margin: 10px auto 0 auto;
+}
+
+@media (max-width: 600px) {
+  .ds-palette-swatches {
+    grid-template-columns: repeat(4, 34px);
+    gap: 8px;
+  }
+}
+
+.ds-color-tile,
+.ds-color-swatch-btn {
+  width: 34px !important;
+  height: 34px !important;
+  min-width: 34px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 2px solid #000000 !important;
+  cursor: pointer;
+  background-image: url('assets/images/ds/button_square.png') !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  background-size: cover !important;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 1px 1px 0 rgba(0, 0, 0, 0.25);
+  transition: transform 0.1s ease, filter 0.1s ease;
+  clip-path: polygon(
+    2px 100%,
+    2px calc(100% - 2px),
+    0 calc(100% - 2px),
+    0 2px,
+    2px 2px,
+    2px 0,
+    calc(100% - 2px) 0,
+    calc(100% - 2px) 2px,
+    100% 2px,
+    100% calc(100% - 2px),
+    calc(100% - 2px) calc(100% - 2px),
+    calc(100% - 2px) 100%
+  ) !important;
+}
+
+.ds-color-tile:hover,
+.ds-color-swatch-btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.1);
+}
+
+.ds-color-tile:active,
+.ds-color-swatch-btn:active {
+  background-image: url('assets/images/ds/button_square_active.png') !important;
+  transform: translateY(1px);
+}
+
+.ds-color-tile.active,
+.ds-color-swatch-btn.active {
+  border: 2px solid #000000 !important;
+  outline: 2px solid #ffffff !important;
+  outline-offset: -4px !important;
+  box-shadow: 0 0 0 2px #000000, 0 3px 6px rgba(0, 0, 0, 0.35) !important;
+}
+
+.ds-color-tile.active::after,
+.ds-color-swatch-btn.active::after {
+  content: "✔";
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1;
+  text-shadow: 1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000;
+}
+
+/* ==========================================================================
+   Contact Section & Download Play
+   ========================================================================== */
+.ds-contact-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-gap: 16px;
+}
+
+.ds-contact-card {
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  transition: transform 0.12s ease, border-color 0.12s ease;
+  position: relative;
+}
+
+.ds-contact-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--ds-theme-color);
+}
+
+.ds-contact-icon {
+  font-size: 32px;
+  flex-shrink: 0;
+}
+
+.ds-contact-title {
+  font-weight: 900;
+  font-size: 14px;
+  color: #0f172a;
+}
+
+.ds-contact-handle {
+  font-size: 11.5px;
+  color: #64748b;
+}
+
+.ds-contact-arrow {
+  margin-left: auto;
+  color: #94a3b8;
+  font-size: 16px;
+}
+
+.ds-contact-email-card {
+  cursor: pointer;
+}
+
+/* Retro Toast Notification */
+.ds-toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  background: #ffffff;
+  color: #0f172a;
+  border: 2px solid #000000;
+  border-radius: 6px;
+  padding: 10px 16px;
+  box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.25);
+  font-family: var(--font-ds-system);
+  font-size: 12px;
+  font-weight: bold;
+  z-index: 3000;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transform: translateY(100px);
+  opacity: 0;
+  visibility: hidden;
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease, visibility 0.2s;
+}
+
+.ds-toast.active {
+  transform: translateY(0);
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ==========================================================================
+   Footer & ds.css Credits
+   ========================================================================== */
+.ds-footer {
+  border-top: 2px solid #000000;
+  background: #ffffff;
+  padding: 40px 0;
+  text-align: center;
+  font-size: 13px;
+  color: var(--ds-text-muted);
+}
+
+.ds-footer-links {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-bottom: 14px;
+  flex-wrap: wrap;
+}
+
+.ds-footer-link {
+  color: var(--ds-text-main);
+  text-decoration: none;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.ds-footer-link:hover {
+  color: var(--ds-theme-color);
+}
+
+.ds-credits-box {
+  margin-top: 12px;
+  font-size: 11px;
+  color: #64748b;
+}
+
+.ds-credits-box a {
+  color: var(--ds-theme-color);
+  font-weight: bold;
+}
+
+/* ==========================================================================
+   Responsive Adaptations
+   ========================================================================== */
+@media (max-width: 860px) {
+  .ds-profile-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .ds-navbar-inner {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 8px 16px;
+  }
+
+  .ds-nav-btn-text {
+    display: none;
+  }
+
+  /* Seamless horizontal scrolling DS navigation bar on mobile */
+  .ds-nav-menu {
+    display: flex;
+    order: 3;
+    width: 100%;
+    overflow-x: auto;
+    padding: 2px 0 4px 0;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .ds-nav-menu::-webkit-scrollbar {
+    display: none;
+  }
+
+  .ds-nav-links {
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+  }
+
+  .ds-nav-link {
+    display: inline-block;
+    padding: 5px 10px;
+    font-size: 13px;
+  }
+
+  .ds-hero-title {
+    font-size: 28px;
+  }
+
+  .ds-console-stage {
+    transform: scale(0.85);
+    transform-origin: center top;
+    margin-bottom: -50px;
+  }
+}
+
+@media (max-width: 480px) {
+  .ds-hero-title {
+    font-size: 24px;
+  }
+
+  .ds-console-stage {
+    transform: scale(0.72);
+    transform-origin: center top;
+    margin-bottom: -90px;
+  }
+
+  .ds-cartridge-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    grid-gap: 16px;
+  }
+
+  .ds-specs-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fahim Foysal | Nintendo DS Retro Experience</title>
+  <meta name="description" content="Retro Nintendo DS portfolio of Fahim Foysal. Interactive software, mobile apps, and game cartridges.">
+
+  <!-- Canonical set to /ds as this is the DS mode -->
+  <link rel="canonical" href="https://fahimfoysal.pro.bd/ds">
+  <link rel="icon" href="assets/icon.png" type="image/png">
+
+  <!-- Phosphor Icons -->
+  <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+  <!-- Devicon for Tech Stack Icons -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/devicon.min.css">
+
+  <!-- Retro Stylesheet & ds.css Integration -->
+  <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+  <!-- Animated Moving Diagonal Stripes Background -->
+  <div class="ds-moving-bg"></div>
+
+  <!-- Retro Toast Notification Banner -->
+  <div id="dsToast" class="ds-toast" role="status" aria-live="polite"></div>
+
+  <!-- Top Sticky Navigation Bar -->
+  <header class="ds-navbar">
+    <div class="ds-container ds-navbar-inner">
+      <a href="#home" class="ds-brand" aria-label="Fahim Foysal DS Portfolio Home">
+        <span>FAHIM</span>
+        <span class="ds-brand-badge">DS</span>
+      </a>
+
+      <!-- Desktop & Mobile Navigation Links -->
+      <nav id="dsNavMenu" class="ds-nav-menu" aria-label="Main Navigation">
+        <ul class="ds-nav-links">
+          <li><a href="#home" class="ds-nav-link active">Home</a></li>
+          <li><a href="#skills" class="ds-nav-link">Skills</a></li>
+          <li><a href="#projects" class="ds-nav-link">Cartridges</a></li>
+          <li><a href="#ds-lounge" class="ds-nav-link">DS Lounge</a></li>
+          <li><a href="#about" class="ds-nav-link">Clock</a></li>
+          <li><a href="#contact" class="ds-nav-link">Contact</a></li>
+        </ul>
+      </nav>
+
+      <div class="ds-nav-actions">
+        <!-- Switch to Modern Website Button (Opens in same tab) -->
+        <a href="https://fahimfoysal.pro.bd/" target="_self" class="ds-btn-system modern-link" title="Switch to the Main Website">
+          <i class="ph-bold ph-globe"></i>
+          <span class="ds-nav-btn-text">Main Site</span>
+        </a>
+
+        <!-- System Clock -->
+        <span id="navClock" class="ds-nav-clock" aria-label="DS System Time">12:00 PM</span>
+
+        <!-- Audio Music Toggle with Animated Bars -->
+        <button id="navMusicToggle" class="ds-btn-system" title="Toggle Nintendo BGM Shop Music" aria-label="Toggle Nintendo Background Music">
+          <i id="navMusicIcon" class="ph-bold ph-speaker-simple-high"></i>
+          <span class="ds-nav-btn-text">BGM</span>
+          <span id="bgmWaveBars" class="ds-wave-bars" aria-hidden="true">
+            <span></span><span></span><span></span>
+          </span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- ================= HERO SECTION (ds.css Alert Card) ================= -->
+    <section id="home" class="ds-section">
+      <div class="ds-container">
+        <div class="ds-alert-card">
+          <div class="ds-status-bar-row">
+            <div class="ds-status-pill">
+              <span class="ds-status-dot"></span>
+              <span>SYSTEM ONLINE • NINTENDO DS READY</span>
+            </div>
+            <div class="ds-firmware-pill">
+              <i class="ph-bold ph-cpu"></i>
+              <span>FIRMWARE v1.4.5U</span>
+            </div>
+          </div>
+          
+          <h1 class="ds-hero-title">
+            Building Digital Experiences<br>& Interactive Software.
+          </h1>
+          
+          <p class="ds-hero-subtitle">
+            I'm <strong>Fahim Foysal</strong>, a software engineer passionate about bridging logic and design. From low-level C programming and systems architecture to modern Flutter mobile apps, web applications, and game development with Lua and LÖVE 2D.
+          </p>
+
+          <div class="ds-hero-ctas">
+            <a href="#projects" class="ds-btn-system primary">
+              <i class="ph-bold ph-game-controller"></i> Browse DS Cartridges
+            </a>
+            <a href="#ds-lounge" class="ds-btn-system">
+              <i class="ph-bold ph-device-tablet-speaker"></i> Play in DS Lounge
+            </a>
+            <a href="https://fahimfoysal.pro.bd/" target="_self" class="ds-btn-system modern-link">
+              <i class="ph-bold ph-arrow-square-out"></i> Visit Main Site
+            </a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= SKILLS SECTION: DS INVENTORY ================= -->
+    <section id="skills" class="ds-section">
+      <div class="ds-container">
+        <div class="ds-section-header-flex">
+          <div>
+            <h2 class="ds-section-title">
+              <i class="ph-duotone ph-backpack"></i> Inventory & Tech Stack
+            </h2>
+            <p class="ds-section-subtitle">Equipped tools, and technical proficiencies</p>
+          </div>
+
+          <!-- Inventory Filter Pills -->
+          <div class="ds-filter-pill-group" id="skillsFilterGroup">
+            <button class="ds-filter-pill active" data-skill-filter="all">All (14)</button>
+            <button class="ds-filter-pill" data-skill-filter="languages">Languages</button>
+            <button class="ds-filter-pill" data-skill-filter="frameworks">Frameworks & Mobile</button>
+            <button class="ds-filter-pill" data-skill-filter="systems">Systems & Tools</button>
+          </div>
+        </div>
+
+        <div class="ds-inventory-grid" id="inventoryGrid">
+          <div class="ds-inventory-card" data-category="languages">
+            <i class="devicon-c-plain colored ds-inv-icon"></i>
+            <span class="ds-inv-name">C</span>
+            <span class="ds-inv-sub">Systems & OS</span>
+          </div>
+          <div class="ds-inventory-card" data-category="languages">
+            <i class="devicon-python-plain colored ds-inv-icon"></i>
+            <span class="ds-inv-name">Python</span>
+            <span class="ds-inv-sub">Scripting & ML</span>
+          </div>
+          <div class="ds-inventory-card" data-category="frameworks">
+            <i class="devicon-flutter-plain colored ds-inv-icon"></i>
+            <span class="ds-inv-name">Flutter</span>
+            <span class="ds-inv-sub">Android & iOS</span>
+          </div>
+          <div class="ds-inventory-card" data-category="languages">
+            <i class="devicon-dart-plain colored ds-inv-icon"></i>
+            <span class="ds-inv-name">Dart</span>
+            <span class="ds-inv-sub">Client Logic</span>
+          </div>
+          <div class="ds-inventory-card" data-category="languages">
+            <i class="devicon-java-plain colored ds-inv-icon"></i>
+            <span class="ds-inv-name">Java</span>
+            <span class="ds-inv-sub">PaperMC & Apps</span>
+          </div>
+          <div class="ds-inventory-card" data-category="languages">
+            <i class="devicon-lua-plain colored ds-inv-icon"></i>
+            <span class="ds-inv-name">Lua</span>
+            <span class="ds-inv-sub">Game Scripting</span>
+          </div>
+          <div class="ds-inventory-card" data-category="frameworks">
+            <i class="devicon-love2d-plain ds-inv-icon"></i>
+            <span class="ds-inv-name">LÖVE 2D</span>
+            <span class="ds-inv-sub">Game Engine</span>
+          </div>
+          <div class="ds-inventory-card" data-category="systems">
+            <i class="devicon-linux-plain colored ds-inv-icon"></i>
+            <span class="ds-inv-name">Linux</span>
+            <span class="ds-inv-sub">Environment & CLI</span>
+          </div>
+          <div class="ds-inventory-card" data-category="systems">
+            <i class="devicon-bash-plain colored ds-inv-icon"></i>
+            <span class="ds-inv-name">Bash</span>
+            <span class="ds-inv-sub">Shell Scripting</span>
+          </div>
+          <div class="ds-inventory-card" data-category="frameworks">
+            <i class="devicon-html5-plain colored ds-inv-icon"></i>
+            <span class="ds-inv-name">HTML5</span>
+            <span class="ds-inv-sub">Semantics & Web</span>
+          </div>
+          <div class="ds-inventory-card" data-category="frameworks">
+            <i class="devicon-css3-plain colored ds-inv-icon"></i>
+            <span class="ds-inv-name">CSS3</span>
+            <span class="ds-inv-sub">Retro & Modern</span>
+          </div>
+          <div class="ds-inventory-card" data-category="languages">
+            <i class="devicon-javascript-plain colored ds-inv-icon"></i>
+            <span class="ds-inv-name">JavaScript</span>
+            <span class="ds-inv-sub">Client & Canvas</span>
+          </div>
+          <div class="ds-inventory-card" data-category="systems">
+            <i class="devicon-sqlite-plain colored ds-inv-icon"></i>
+            <span class="ds-inv-name">SQLite</span>
+            <span class="ds-inv-sub">Local Storage</span>
+          </div>
+          <div class="ds-inventory-card" data-category="systems">
+            <i class="devicon-git-plain colored ds-inv-icon"></i>
+            <span class="ds-inv-name">Git</span>
+            <span class="ds-inv-sub">Version Control</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= PROJECTS SECTION: REAL NINTENDO DS CARTRIDGES ================= -->
+    <section id="projects" class="ds-section">
+      <div class="ds-container">
+        <div class="ds-section-header-flex">
+          <div>
+            <h2 class="ds-section-title">
+              <i class="ph-duotone ph-cards"></i> Game Cartridges (Slot-1)
+            </h2>
+            <p class="ds-section-subtitle">
+              Click any cartridge to inspect its full game manual, tech stack specs, and go to the website.
+            </p>
+          </div>
+
+          <!-- Quick Cartridge Filter Pills -->
+          <div class="ds-filter-pill-group" id="cartridgeFilterGroup">
+            <button class="ds-filter-pill active" data-filter="all">All (9)</button>
+            <button class="ds-filter-pill" data-filter="mobile">Mobile</button>
+            <button class="ds-filter-pill" data-filter="web">Web & Art</button>
+            <button class="ds-filter-pill" data-filter="systems">Systems & C</button>
+            <button class="ds-filter-pill" data-filter="games">Game Dev</button>
+          </div>
+        </div>
+
+        <!-- Cartridge Search Bar -->
+        <div class="ds-search-bar-wrap">
+          <div class="ds-search-box">
+            <i class="ph-bold ph-magnifying-glass ds-search-icon"></i>
+            <input type="text" id="cartridgeSearchInput" class="ds-search-input" placeholder="Search cartridges by title or technology" aria-label="Search cartridges">
+            <button id="cartridgeSearchClear" class="ds-search-clear-btn" aria-label="Clear search" style="display:none;">&times;</button>
+          </div>
+          <span id="cartridgeCountBadge" class="ds-cartridge-count-badge">Showing 9 of 9</span>
+        </div>
+
+        <div id="cartridgeGrid" class="ds-cartridge-grid">
+          <!-- Cartridges rendered dynamically by script.js -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= RETRO DS LOUNGE (Alexandra Radevich's Pure CSS Model) ================= -->
+    <section id="ds-lounge" class="ds-section">
+      <div class="ds-container">
+        <div class="ds-lounge-wrapper">
+          <div style="text-align: center;">
+            <h2 class="ds-section-title" style="justify-content: center;">
+              <i class="ph-duotone ph-game-controller"></i> Nintendo DS Lounge
+            </h2>
+            <p class="ds-section-subtitle" style="margin-bottom: 0;">
+              Pixel-perfect CSS Nintendo DS Lite (from @aradevich). Doodle in PictoChat, play retro Snake, explore the Jukebox, or load Cartridges!
+            </p>
+          </div>
+
+          <!-- Pure CSS Nintendo DS Lite Console (Exact Structure from CodePen mdRYzyJ) -->
+          <div class="ds-console-stage">
+            <div id="css" class="nintendo-ds">
+              <!-- Upper Screen Shell -->
+              <div class="top-screen">
+                <div class="speaker-hole" id="sh1"></div>
+                <div class="speaker-hole" id="sh2"></div>
+                
+                <div class="screen">
+                  <div class="ds-screen-container">
+                    <div class="ds-top-screen-ui">
+                      <div class="ds-top-header">
+                        <span id="loungeDate">11/17/26</span>
+                        <span id="loungeClock" style="font-family: var(--font-ds-clock); font-weight: bold;">12:00 PM</span>
+                      </div>
+
+                      <!-- Dynamic Top Screen Banner / DSi Display -->
+                      <div class="ds-top-body" id="loungeTopBody">
+                        <i id="loungeTopIcon" class="ph-duotone ph-chat-circle-dots" style="font-size: 26px; color: var(--ds-theme-color);"></i>
+                        <div id="loungeTopTitle" style="font-weight: 900; font-size: 11px;">PICTOCHAT</div>
+                        <div id="loungeTopSub" style="font-size: 8px; color: #64748b;">Wireless Room A • 2 Online</div>
+                      </div>
+
+                      <div class="ds-top-footer">
+                        <span id="loungeCartridgeStatus">SLOT-1: TRACKEDIFY</span>
+                        <span id="loungeBatteryStatus"><i class="ph-bold ph-battery-full" style="color:#10b981;"></i> BATT</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="speaker-hole" id="sh3"></div>
+                <div class="speaker-hole" id="sh4"></div>
+              </div>
+
+              <!-- Hinge with Mic and Power LED -->
+              <div class="hinge">
+                <div class="mic" title="Microphone"></div>
+                <div class="light" id="dsPowerLed" title="Power LED"></div>
+              </div>
+
+              <!-- Lower Screen Shell -->
+              <div class="bottom-screen">
+                <div class="screen">
+                  <div class="ds-screen-container">
+                    <!-- Splash Boot Screen on First Load -->
+                    <div id="loungeSplash" class="ds-splash-screen" role="button" tabindex="0" aria-label="Touch Screen to Boot Nintendo DS">
+                      <i class="ph-bold ph-game-controller" style="font-size: 28px; color: var(--ds-theme-color);"></i>
+                      <div style="font-size: 11px; font-weight: 900; letter-spacing: 1px;">Nintendo DS™</div>
+                      <div class="ds-boot-pulse-text">Touch Screen to Boot</div>
+                    </div>
+
+                    <!-- VIEW 1: DSi Horizontal Carousel Menu -->
+                    <div id="viewDsiMenu" class="ds-view dsi-menu-view">
+                      <div class="dsi-menu-header">DSi HOME MENU</div>
+                      <div class="dsi-carousel">
+                        <div class="dsi-app-icon" data-dsi-action="picto" role="button" tabindex="0" aria-label="Open PictoChat">
+                          <i class="ph-duotone ph-chat-circle-dots" style="color: #10b981;"></i>
+                          <span class="dsi-app-name">Chat</span>
+                        </div>
+                        <div class="dsi-app-icon" data-dsi-action="snake" role="button" tabindex="0" aria-label="Play Snake Game">
+                          <i class="ph-duotone ph-snake" style="color: #22c55e;"></i>
+                          <span class="dsi-app-name">Snake</span>
+                        </div>
+                        <div class="dsi-app-icon" data-dsi-action="cartridge" role="button" tabindex="0" aria-label="Inspect Slot-1 Cartridge">
+                          <i class="ph-duotone ph-cassette-tape" style="color: #0284c7;"></i>
+                          <span class="dsi-app-name">Slot-1</span>
+                        </div>
+                        <div class="dsi-app-icon" data-dsi-action="sound" role="button" tabindex="0" aria-label="Open Sound & Jukebox Test">
+                          <i class="ph-duotone ph-speaker-high" style="color: #eab308;"></i>
+                          <span class="dsi-app-name">Sound</span>
+                        </div>
+                      </div>
+                      <div class="dsi-menu-tip">Select an app with stylus or A button</div>
+                    </div>
+
+                    <!-- VIEW 2: PictoChat Screen -->
+                    <div id="viewPicto" class="ds-view pictochat-view">
+                      <div class="picto-header">
+                        <button id="pictoHomeBtn" class="ds-btn-system ds-btn-mini" aria-label="Back to DSi Menu">&lt; DSi</button>
+                        <span>PICTOCHAT: ROOM A</span>
+                        <button id="loungeClearBtn" class="ds-btn-system ds-btn-mini" aria-label="Clear Canvas">Clear</button>
+                      </div>
+
+                      <div id="pictoMessageBoard" class="picto-feed">
+                        <div class="picto-bubble">
+                          <strong>DS-BOT:</strong> Welcome to PictoChat! Pick up the stylus to draw or tap a stamp below.
+                        </div>
+                      </div>
+                      
+                      <canvas id="pictoCanvas" width="215" height="50" aria-label="PictoChat Drawing Canvas"></canvas>
+                      
+                      <div class="picto-toolbar">
+                        <div class="picto-tools-left">
+                          <button id="penBtn" class="ds-btn-system primary ds-btn-mini" title="Pen Tool">Pen</button>
+                          <button id="penColorBtn" class="ds-btn-system ds-btn-mini" title="Toggle Ink Color">Theme</button>
+                          <button id="eraserBtn" class="ds-btn-system ds-btn-mini" title="Eraser Tool">Eraser</button>
+                          <button id="stampStarBtn" class="ds-btn-system ds-btn-mini" title="Stamp Star">⭐</button>
+                          <button id="stampHeartBtn" class="ds-btn-system ds-btn-mini" title="Stamp Heart">❤️</button>
+                        </div>
+                        <button id="sendPictoBtn" class="ds-btn-system primary ds-btn-mini" title="Send Drawing">Send</button>
+                      </div>
+                    </div>
+
+                    <!-- VIEW 3: Playable Retro Snake Screen -->
+                    <div id="viewSnake" class="ds-view snake-view">
+                      <div class="snake-header">
+                        <button id="snakeHomeBtn" class="ds-btn-system ds-btn-mini" style="color:#000;" aria-label="Back to DSi Menu">&lt; DSi</button>
+                        <span>GBA: SNAKE</span>
+                        <span>SCORE: <strong id="snakeScore">0</strong></span>
+                      </div>
+                      <canvas id="snakeCanvas" width="200" height="115" aria-label="Snake Game Area"></canvas>
+                      
+                      <div id="snakeGameOverOverlay" class="snake-game-over-overlay" style="display:none;">
+                        <div style="font-weight:900; font-size:10px; color:#ef4444;">GAME OVER</div>
+                        <div style="font-size:8px; color:#e2e8f0;">Final: <span id="snakeFinalScore">0</span> | Best: <span id="snakeBestScore">0</span></div>
+                        <button id="snakeRestartBtn" class="ds-btn-system primary ds-btn-mini" style="margin-top:2px;">Play Again (A)</button>
+                      </div>
+
+                      <div class="snake-footer-bar">
+                        <span>HI-SCORE: <span id="snakeHiScoreDisplay">0</span></span>
+                        <span>Use D-Pad / Keys</span>
+                      </div>
+                    </div>
+
+                    <!-- VIEW 4: Nintendo Sound & Jukebox Test Screen -->
+                    <div id="viewSound" class="ds-view sound-view">
+                      <div class="sound-header">
+                        <button id="soundHomeBtn" class="ds-btn-system ds-btn-mini" aria-label="Back to DSi Menu">&lt; DSi</button>
+                        <span>DS SOUND TEST</span>
+                        <span id="soundActiveStatus">STANDBY</span>
+                      </div>
+
+                      <div class="sound-grid">
+                        <button class="ds-btn-system ds-btn-mini ds-sound-test-btn" data-sfx="boot">
+                          <i class="ph-bold ph-bell"></i> Boot Chime
+                        </button>
+                        <button class="ds-btn-system ds-btn-mini ds-sound-test-btn" data-sfx="tap">
+                          <i class="ph-bold ph-hand-tap"></i> Stylus Tap
+                        </button>
+                        <button class="ds-btn-system ds-btn-mini ds-sound-test-btn" data-sfx="select">
+                          <i class="ph-bold ph-check"></i> Menu Chirp
+                        </button>
+                        <button class="ds-btn-system ds-btn-mini ds-sound-test-btn" data-sfx="cancel">
+                          <i class="ph-bold ph-arrow-u-up-left"></i> Cancel Blip
+                        </button>
+                        <button class="ds-btn-system ds-btn-mini ds-sound-test-btn" data-sfx="cartridge">
+                          <i class="ph-bold ph-cards"></i> Cartridge Snap
+                        </button>
+                        <button class="ds-btn-system ds-btn-mini ds-sound-test-btn" data-sfx="picto">
+                          <i class="ph-bold ph-paper-plane-tilt"></i> Picto Send
+                        </button>
+                      </div>
+
+                      <div class="sound-bgm-bar">
+                        <button id="soundBgmToggleBtn" class="ds-btn-system primary ds-btn-mini" style="width:100%;">
+                          <i class="ph-bold ph-music-notes"></i> Toggle Nintendo BGM Shop Marimba
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Hardware D-Pad -->
+                <div class="d-pad" id="loungeDpad" title="D-Pad: Click to steer">
+                  <div class="d-pad-marker" id="dpm1"></div>
+                  <div class="d-pad-marker" id="dpm2"></div>
+                  <div class="d-pad-marker" id="dpm3"></div>
+                  <div class="d-pad-marker" id="dpm4"></div>
+                </div>
+
+                <!-- Symmetrical Hardware Face Buttons -->
+                <div class="button" id="X" role="button" tabindex="0" aria-label="X Button">X</div>
+                <div class="button" id="A" role="button" tabindex="0" aria-label="A Button (Select)">A</div>
+                <div class="button" id="B" role="button" tabindex="0" aria-label="B Button (Back)">B</div>
+                <div class="button" id="Y" role="button" tabindex="0" aria-label="Y Button">Y</div>
+
+                <!-- Start & Select Buttons -->
+                <div class="small-button" id="start" role="button" tabindex="0" aria-label="Start Button"></div>
+                <div class="small-button" id="select" role="button" tabindex="0" aria-label="Select Button"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Authentic ds.css Color Theme Selector (16 Official Firmware Colors) -->
+          <div class="ds-theme-selector-box">
+            <div class="ds-theme-selector-header">
+              <span class="ds-theme-label">
+                Nintendo DS Favorite Color: <strong id="activeThemeNameDisplay" style="color:var(--ds-theme-color);">Blue</strong>
+              </span>
+              <span class="ds-theme-sub">16 Authentic Firmware Colors</span>
+            </div>
+            <div id="themePalette" class="ds-palette-swatches">
+              <!-- 16 authentic ds.css button-square swatches populated by JS -->
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= DS CLOCK & CALENDAR SECTION ================= -->
+    <section id="about" class="ds-section">
+      <div class="ds-container">
+        <div style="text-align: center; margin-bottom: 24px;">
+          <h2 class="ds-section-title" style="justify-content: center;">
+            <i class="ph-duotone ph-clock"></i> DS Clock & Calendar System
+          </h2>
+          <p class="ds-section-subtitle">Analog clock, interactive monthly calendar, and real-time hardware synchronization</p>
+        </div>
+
+        <!-- Authentic Boxy ds.css Clock & Calendar Widget (from css.ds.dreamyard.xyz) -->
+        <div class="ds-calendar-clock-wrapper">
+          <!-- Boxy Nintendo DS Clock Component -->
+          <div class="ds-clock-component">
+            <div class="ds-clock-box">
+              <!-- Hands & Center Pivot Layer -->
+              <div class="ds-clock-hands-layer">
+                <div class="ds-clock-center-pivot">
+                  <div id="hourHand" class="ds-clock-hand ds-hour-hand"></div>
+                  <div id="minuteHand" class="ds-clock-hand ds-minute-hand"></div>
+                  <div id="secondHand" class="ds-clock-hand ds-second-hand"></div>
+                </div>
+              </div>
+
+              <!-- Digits 12, 9, 3, 6 Layer in ds-clock font -->
+              <div class="ds-clock-numbers-layer">
+                <span class="ds-clock-num-12">12</span>
+                <div class="ds-clock-middle-row">
+                  <span>9</span>
+                  <span>3</span>
+                </div>
+                <span class="ds-clock-num-6">6</span>
+              </div>
+
+              <!-- 8 Square Dots Layer (8px x 8px) -->
+              <div class="ds-clock-dots-layer">
+                <div class="ds-clock-dots-row ds-dots-row-1">
+                  <span class="ds-clock-dot"></span>
+                  <span class="ds-clock-dot"></span>
+                </div>
+                <div class="ds-clock-dots-row ds-dots-row-2">
+                  <span class="ds-clock-dot"></span>
+                  <span class="ds-clock-dot"></span>
+                </div>
+                <div class="ds-clock-dots-spacer"></div>
+                <div class="ds-clock-dots-row ds-dots-row-3">
+                  <span class="ds-clock-dot"></span>
+                  <span class="ds-clock-dot"></span>
+                </div>
+                <div class="ds-clock-dots-row ds-dots-row-4">
+                  <span class="ds-clock-dot"></span>
+                  <span class="ds-clock-dot"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Live Digital System Time Below Clock -->
+            <div style="margin-top: 10px; text-align: center;">
+              <div id="calLiveTime" style="font-family: var(--font-ds-clock); font-size: 22px; color: var(--ds-theme-color);">12:00:00 PM</div>
+            </div>
+          </div>
+
+          <!-- Boxy Nintendo DS Calendar Component (234px) -->
+          <div class="ds-calendar-component">
+            <div class="ds-calendar-month-bar">
+              <span id="calMonthYearTitle">11/2026</span>
+            </div>
+            <div class="ds-calendar-box">
+              <div class="ds-calendar-weekdays-row">
+                <div class="ds-cal-day-header sunday"><span>Su</span></div>
+                <div class="ds-cal-day-header"><span>Mo</span></div>
+                <div class="ds-cal-day-header"><span>Tu</span></div>
+                <div class="ds-cal-day-header"><span>We</span></div>
+                <div class="ds-cal-day-header"><span>Th</span></div>
+                <div class="ds-cal-day-header"><span>Fr</span></div>
+                <div class="ds-cal-day-header saturday"><span>Sa</span></div>
+              </div>
+              <div id="calDaysGrid" class="ds-calendar-cells-grid">
+                <!-- Generated dynamically by script.js -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= CONTACT SECTION: DS DOWNLOAD PLAY ================= -->
+    <section id="contact" class="ds-section">
+      <div class="ds-container">
+        <h2 class="ds-section-title">
+          <i class="ph-duotone ph-broadcast"></i> DS Download Play (Contact)
+        </h2>
+        <p class="ds-section-subtitle">Connect with me across digital networks and wireless access points (Only GitHub is available)</p>
+
+        <div class="ds-contact-grid">
+          <a href="https://github.com/fahim-foysal-097" target="_blank" rel="noopener" class="ds-panel-box ds-contact-card">
+            <i class="ph-fill ph-github-logo ds-contact-icon" style="color:#0f172a;"></i>
+            <div>
+              <div class="ds-contact-title">GitHub</div>
+              <div class="ds-contact-handle">@fahim-foysal-097</div>
+            </div>
+            <i class="ph-bold ph-arrow-up-right ds-contact-arrow"></i>
+          </a>
+
+          <div class="ds-panel-box ds-contact-card ds-contact-email-card" id="contactEmailCard" role="button" tabindex="0" title="Click to copy email">
+            <i class="ph-fill ph-envelope ds-contact-icon" style="color:#ea580c;"></i>
+            <div style="flex:1;">
+              <div class="ds-contact-title">Email</div>
+              <div class="ds-contact-handle"></div>
+            </div>
+            <button id="copyEmailBtn" class="ds-btn-system ds-btn-mini" aria-label="Copy Email Address">
+              <i class="ph-bold ph-copy"></i> Copy
+            </button>
+          </div>
+
+          <a href="https://linkedin.com" target="_blank" rel="noopener" class="ds-panel-box ds-contact-card">
+            <i class="ph-fill ph-linkedin-logo ds-contact-icon" style="color:#0284c7;"></i>
+            <div>
+              <div class="ds-contact-title">LinkedIn</div>
+              <div class="ds-contact-handle">Fahim Foysal</div>
+            </div>
+            <i class="ph-bold ph-arrow-up-right ds-contact-arrow"></i>
+          </a>
+
+          <a href="https://x.com" target="_blank" rel="noopener" class="ds-panel-box ds-contact-card">
+            <i class="ph-fill ph-twitter-logo ds-contact-icon" style="color:#0284c7;"></i>
+            <div>
+              <div class="ds-contact-title">Twitter / X</div>
+              <div class="ds-contact-handle">Follow Updates</div>
+            </div>
+            <i class="ph-bold ph-arrow-up-right ds-contact-arrow"></i>
+          </a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ================= PROJECT DETAILS MODAL (GAME MANUAL) ================= -->
+  <!-- Converted to modern HTML5 <dialog> with closedby="any" and accessible ARIA attributes -->
+  <dialog id="projectModal" class="ds-modal-dialog" closedby="any" aria-labelledby="modalHeaderTitle">
+    <div class="ds-modal-box">
+      <!-- Modal Header -->
+      <div class="ds-modal-header">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <i class="ph-bold ph-book-open"></i>
+          <h3 id="modalHeaderTitle">GAME MANUAL: TRACKEDIFY</h3>
+        </div>
+        <button id="modalCloseBtn" class="ds-modal-close-btn" aria-label="Close Game Manual">&times;</button>
+      </div>
+
+      <!-- Modal Body -->
+      <div class="ds-modal-body">
+        <!-- Top Cartridge Banner & Metadata -->
+        <div class="ds-modal-project-meta">
+          <div id="modalCartThumb" class="ds-modal-cart-thumb" aria-hidden="true">
+            <i class="ph ph-wallet"></i>
+          </div>
+          <div style="flex:1;">
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+              <div>
+                <h2 id="modalProjectTitle" style="margin:0 0 4px 0; font-size:22px;">Trackedify</h2>
+                <div id="modalProjectCategory" style="font-size:12px; color:#64748b; font-weight:bold;">Android • Finance App</div>
+              </div>
+              <span id="modalCartCode" class="ds-manual-serial-pill">NTR-TRCK-USA</span>
+            </div>
+            <div id="modalProjectTags" class="ds-modal-tags-row">
+              <!-- Tags populated dynamically -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Manual Section Tabs -->
+        <div class="ds-manual-tabs-bar">
+          <button class="ds-manual-tab active" data-manual-tab="overview">
+            <i class="ph-bold ph-article"></i> Overview
+          </button>
+          <button class="ds-manual-tab" data-manual-tab="specs">
+            <i class="ph-bold ph-cpu"></i> System Specs
+          </button>
+          <button class="ds-manual-tab" data-manual-tab="controls">
+            <i class="ph-bold ph-game-controller"></i> Controls
+          </button>
+        </div>
+
+        <!-- Tab 1: Overview -->
+        <div id="manualTabOverview" class="ds-manual-tab-content active">
+          <h4 class="ds-manual-section-heading">INSTRUCTION MANUAL & ARCHITECTURE</h4>
+          <p id="modalProjectDesc" class="ds-modal-desc-text">
+            Detailed project information will appear here.
+          </p>
+        </div>
+
+        <!-- Tab 2: Specs -->
+        <div id="manualTabSpecs" class="ds-manual-tab-content">
+          <h4 class="ds-manual-section-heading">HARDWARE & SOFTWARE SPECIFICATIONS</h4>
+          <div class="ds-specs-grid" id="modalSpecsGrid">
+            <div class="ds-spec-item">
+              <span class="ds-spec-key">PRIMARY STACK</span>
+              <span class="ds-spec-val" id="modalSpecPrimary">Flutter / Dart</span>
+            </div>
+            <div class="ds-spec-item">
+              <span class="ds-spec-key">COMPATIBILITY</span>
+              <span class="ds-spec-val" id="modalSpecCompat">Slot-1 • Cross-Platform</span>
+            </div>
+            <div class="ds-spec-item">
+              <span class="ds-spec-key">STORAGE ENGINE</span>
+              <span class="ds-spec-val" id="modalSpecStorage">SQLite / Offline First</span>
+            </div>
+            <div class="ds-spec-item">
+              <span class="ds-spec-key">SERIAL CODE</span>
+              <span class="ds-spec-val" id="modalSpecSerial">NTR-TRCK-USA</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 3: Controls -->
+        <div id="manualTabControls" class="ds-manual-tab-content">
+          <h4 class="ds-manual-section-heading">CONTROLS & SHORTCUTS</h4>
+          <ul class="ds-controls-list">
+            <li><strong>Stylus / Left Click:</strong> Interact with UI elements, select options, or open links.</li>
+            <li><strong>Left & Right Arrow Keys:</strong> Flip between previous and next cartridges in manual mode.</li>
+            <li><strong>Escape Key:</strong> Close Game Manual dialog.</li>
+            <li><strong>DS Lounge Integration:</strong> Insert this cartridge directly into Slot-1 to preview its title banner on the top screen!</li>
+          </ul>
+        </div>
+
+        <!-- Booklet Navigation: Previous & Next Cartridges -->
+        <div class="ds-booklet-nav-bar">
+          <button id="modalPrevBtn" class="ds-btn-system ds-btn-mini">
+            <i class="ph-bold ph-caret-left"></i> Prev Game
+          </button>
+          <span id="modalIndexCounter" class="ds-booklet-counter">Cartridge 1 of 9</span>
+          <button id="modalNextBtn" class="ds-btn-system ds-btn-mini">
+            Next Game <i class="ph-bold ph-caret-right"></i>
+          </button>
+        </div>
+
+        <!-- Modal Actions -->
+        <div class="ds-modal-actions">
+          <a id="modalLiveBtn" href="#" target="_blank" rel="noopener" class="ds-btn-system primary">
+            <i class="ph-bold ph-arrow-square-out"></i> Go to the Website
+          </a>
+          <a id="modalGithubBtn" href="#" target="_blank" rel="noopener" class="ds-btn-system">
+            <i class="ph-fill ph-github-logo"></i> View Source Code
+          </a>
+          <button id="modalInsertBtn" class="ds-btn-system">
+            <i class="ph-bold ph-tray-arrow-down"></i> Insert into DS
+          </button>
+        </div>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- Footer with ds.css Credits -->
+  <footer class="ds-footer">
+    <div class="ds-container">
+      <div class="ds-footer-links">
+        <a href="#home" class="ds-footer-link">Home</a>
+        <a href="#about" class="ds-footer-link">About</a>
+        <a href="#skills" class="ds-footer-link">Skills</a>
+        <a href="#projects" class="ds-footer-link">Cartridges</a>
+        <a href="#ds-lounge" class="ds-footer-link">DS Lounge</a>
+        <a href="#contact" class="ds-footer-link">Contact</a>
+        <a href="https://fahimfoysal.pro.bd/" target="_self" class="ds-footer-link" style="color: #10b981;">Main Version 🌐</a>
+      </div>
+      <div>
+        &copy; 2026 FAHIM FOYSAL • BUILT WITH PASSION & INNOVATION
+      </div>
+      <div class="ds-credits-box">
+        Styling powered by <a href="https://github.com/spiritov/ds.css" target="_blank" rel="noopener">ds.css</a> by spiritov • DS Model inspired by <a href="https://codepen.io/aradevich/pen/mdRYzyJ" target="_blank" rel="noopener">aradevich</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="assets/js/audio.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
