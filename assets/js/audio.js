@@ -1,140 +1,306 @@
 /**
- * Nintendo DS Web Audio Sound Synthesizer & BGM Engine (v4.0)
- * Sample-accurate recreation of Nintendo DS audio:
- * - Boot Chime (Dual harmonic bells)
- * - Tactile Stylus Tap (Subtle acoustic click)
- * - Menu Select & Cancel chirps
- * - Cartridge Mechanical Snap
- * - PictoChat Send Chime
- * - Full 128-Step (~27s) Multi-Movement Nintendo DSi / Wii Shop Marimba Soundtrack:
- *   • Section A: Main DSi Shop bouncy walk
- *   • Section B: Sunshine high-octave counter-melody with sparkling chimes
- *   • Section C: Dreamy PictoChat arpeggios & deep walking bass
- *   • Section D: Joyful staccato breakdown with turnaround triplets
- * - Lookahead Web Audio scheduling for sample-accurate timing across all browsers.
+ * Nintendo DS / DSi-inspired Web Audio Engine
+ * BGM tune-up: chord-safe counterline, clean eighth-note articulation,
+ * smoother tempo, and octave-only repeat variations.
+ *
+ * This is an original synthesis, not a recording or bit-perfect recreation
+ * of Nintendo firmware audio. The layered transients, decaying partials,
+ * restrained stereo/reverb, and plucked instruments aim for DS/DSi character.
  */
-
 class DSAudioEngine {
   constructor() {
     this.ctx = null;
+
     this.sfxEnabled = true;
     this.bgmEnabled = false;
     this.bgmVolume = 0.28;
     this.sfxVolume = 0.45;
 
-    // BGM Lookahead Scheduler state
+    // Lookahead scheduler state. Keep the same timing and looping behavior.
     this.bgmTimer = null;
     this.bgmStep = 0;
+    this.bgmLoop = 0;
     this.nextStepTime = 0;
-    this.stepDuration = 0.21; // ~142 BPM in 4/4 meter (8th note steps)
+    this.stepDuration = 0.225;
+
     this.noiseBuffer = null;
     this.bgmMasterGain = null;
     this.bgmFilter = null;
     this.bgmCompressor = null;
+    this.bgmReverb = null;
+    this.bgmReverbGain = null;
+
+    // Sixteen bars of original, DSi-inspired music in C major / A minor.
+    // Each 16-step phrase spans two 4/4 bars at eighth-note resolution.
+    this.melody = [
+      // Cmaj7
+      79, null, 84, 83, 79, null, 76, 72,
+      76, null, 79, 84, 83, null, 79, null,
+      // Am7
+      81, null, 84, 88, 88, null, 84, 81,
+      76, null, 79, 84, 88, null, 84, null,
+      // Fmaj7
+      81, null, 84, 88, 89, null, 88, 84,
+      81, null, 77, 81, 84, null, 81, null,
+      // G6
+      79, null, 83, 86, 88, null, 86, 83,
+      79, null, 83, 86, 88, null, 86, null,
+      // Em7
+      79, null, 83, 86, 88, null, 86, 83,
+      79, null, 76, 79, 83, null, 79, null,
+      // Am7
+      81, null, 84, 88, 91, null, 88, 84,
+      81, null, 84, 88, 91, null, 88, null,
+      // Dm7
+      77, null, 81, 84, 86, null, 84, 81,
+      77, null, 74, 77, 81, null, 77, null,
+      // G7 turnaround resolving to Cmaj7 on the loop
+      79, null, 83, 86, 89, null, 86, 83,
+      79, null, 83, 79, 74, null, 72, null
+    ];
+
+    this.chords = [
+      [60, 64, 67, 71], // Cmaj7
+      [57, 60, 64, 67], // Am7
+      [53, 57, 60, 64], // Fmaj7
+      [55, 59, 62, 64], // G6
+      [52, 55, 59, 62], // Em7
+      [57, 60, 64, 67], // Am7
+      [50, 53, 57, 60], // Dm7
+      [55, 59, 62, 65]  // G7
+    ];
+
+    // Eight quarter-note bass notes for each 16-step harmony phrase.
+    this.bassPatterns = [
+      [48, 55, 60, 55, 48, 55, 52, 55], // C
+      [45, 52, 57, 52, 45, 52, 48, 52], // Am
+      [41, 48, 53, 48, 41, 48, 45, 48], // F
+      [43, 50, 55, 50, 43, 50, 47, 50], // G
+      [40, 47, 52, 47, 40, 47, 43, 47], // Em
+      [45, 52, 57, 52, 45, 52, 48, 52], // Am
+      [38, 45, 50, 45, 38, 45, 41, 45], // Dm
+      [43, 50, 55, 50, 43, 50, 47, 50]  // G7
+    ];
+
+    this.sparkles = new Map([
+      [14, 91], [30, 88], [46, 93], [62, 91],
+      [78, 88], [94, 93], [110, 86], [126, 89]
+    ]);
   }
 
   init() {
     if (this.ctx) return;
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    if (AudioContext) {
-      this.ctx = new AudioContext();
+
+    const AudioContextClass =
+      window.AudioContext || window.webkitAudioContext;
+
+    if (!AudioContextClass) return;
+
+    try {
+      this.ctx = new AudioContextClass({ latencyHint: "interactive" });
+    } catch (error) {
+      // Older browsers may not accept AudioContext options.
+      this.ctx = new AudioContextClass();
     }
+
+    this._createNoiseBuffer();
   }
 
   ensureContext() {
     this.init();
     if (this.ctx && this.ctx.state === "suspended") {
-      this.ctx.resume();
+      // AudioContext.resume() is permitted when called from a user gesture.
+      this.ctx.resume().catch(() => {});
     }
+    return this.ctx;
+  }
+
+  _midiToFreq(note) {
+    return 440 * Math.pow(2, (note - 69) / 12);
+  }
+
+  _createNoiseBuffer() {
+    if (!this.ctx || this.noiseBuffer) return;
+
+    const length = Math.floor(this.ctx.sampleRate * 0.18);
+    const buffer = this.ctx.createBuffer(1, length, this.ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+
+    for (let i = 0; i < length; i++) {
+      // A very small fade avoids a hard edge when a noise burst is stopped.
+      const edge = Math.min(1, i / 24, (length - i) / 24);
+      data[i] = (Math.random() * 2 - 1) * Math.max(0, edge);
+    }
+
+    this.noiseBuffer = buffer;
   }
 
   /**
-   * OG Nintendo DS Stylus Screen Tap Sound
-   * Soft, high-passed acoustic plastic tick (12ms)
+   * Small reusable oscillator voice with a shaped envelope.
+   * Options: type, attack, startFreq, endFreq, pitchTime, filterType,
+   * filterFreq, filterQ, pan, destination.
    */
+  _tone(freq, time, duration, peak, options = {}) {
+    if (!this.ctx || !freq || freq <= 0 || duration <= 0 || peak <= 0) return;
+
+    const osc = this.ctx.createOscillator();
+    const envelope = this.ctx.createGain();
+    let output = osc;
+
+    osc.type = options.type || "sine";
+    osc.frequency.setValueAtTime(options.startFreq || freq, time);
+
+    if (options.endFreq && options.pitchTime) {
+      osc.frequency.exponentialRampToValueAtTime(
+        Math.max(1, options.endFreq),
+        time + options.pitchTime
+      );
+    }
+
+    if (options.filterType) {
+      const filter = this.ctx.createBiquadFilter();
+      filter.type = options.filterType;
+      filter.frequency.setValueAtTime(options.filterFreq || 1800, time);
+      filter.Q.setValueAtTime(options.filterQ || 1, time);
+      output.connect(filter);
+      output = filter;
+    }
+
+    output.connect(envelope);
+    let finalOutput = envelope;
+
+    if (typeof options.pan === "number" && this.ctx.createStereoPanner) {
+      const panner = this.ctx.createStereoPanner();
+      panner.pan.setValueAtTime(Math.max(-1, Math.min(1, options.pan)), time);
+      envelope.connect(panner);
+      finalOutput = panner;
+    }
+
+    finalOutput.connect(options.destination || this.ctx.destination);
+
+    const attack = Math.max(0.001, Math.min(options.attack || 0.004, duration * 0.45));
+    const releaseTime = time + Math.max(duration, attack + 0.006);
+
+    envelope.gain.setValueAtTime(0.0001, time);
+    envelope.gain.linearRampToValueAtTime(peak, time + attack);
+    envelope.gain.exponentialRampToValueAtTime(0.0001, releaseTime);
+
+    osc.start(time);
+    osc.stop(releaseTime + 0.015);
+  }
+
+  _noiseBurst(time, duration, peak, filterType, filterFreq, filterQ = 0.8, destination) {
+    if (!this.ctx || !this.noiseBuffer || duration <= 0 || peak <= 0) return;
+
+    const source = this.ctx.createBufferSource();
+    const filter = this.ctx.createBiquadFilter();
+    const envelope = this.ctx.createGain();
+
+    source.buffer = this.noiseBuffer;
+    filter.type = filterType || "highpass";
+    filter.frequency.setValueAtTime(filterFreq || 2500, time);
+    filter.Q.setValueAtTime(filterQ, time);
+
+    source.connect(filter);
+    filter.connect(envelope);
+    envelope.connect(destination || this.ctx.destination);
+
+    envelope.gain.setValueAtTime(0.0001, time);
+    envelope.gain.linearRampToValueAtTime(peak, time + Math.min(0.002, duration * 0.3));
+    envelope.gain.exponentialRampToValueAtTime(0.0001, time + duration);
+
+    source.start(time);
+    source.stop(time + duration + 0.005);
+  }
+
+  /** Filtered noise with a moving cutoff, useful for short plastic/mechanical slides. */
+  _noiseSweep(time, duration, peak, startFreq, endFreq, filterType = "bandpass", destination) {
+    if (!this.ctx || !this.noiseBuffer || duration <= 0 || peak <= 0) return;
+
+    const source = this.ctx.createBufferSource();
+    const filter = this.ctx.createBiquadFilter();
+    const envelope = this.ctx.createGain();
+
+    source.buffer = this.noiseBuffer;
+    filter.type = filterType;
+    filter.Q.setValueAtTime(1.15, time);
+    filter.frequency.setValueAtTime(Math.max(40, startFreq), time);
+    filter.frequency.exponentialRampToValueAtTime(Math.max(40, endFreq), time + duration);
+
+    source.connect(filter);
+    filter.connect(envelope);
+    envelope.connect(destination || this.ctx.destination);
+
+    envelope.gain.setValueAtTime(0.0001, time);
+    envelope.gain.linearRampToValueAtTime(peak, time + Math.min(0.003, duration * 0.25));
+    envelope.gain.exponentialRampToValueAtTime(0.0001, time + duration);
+
+    source.start(time);
+    source.stop(time + duration + 0.005);
+  }
+
+  // Retained as a compatibility helper from the previous implementation.
+  _noiseClick(startTime, duration, vol) {
+    this._noiseBurst(startTime, duration, vol * this.sfxVolume, "bandpass", 1500, 1.0);
+  }
+
+  // ------------------------------------------------------------------------
+  // Nintendo DS-style interface and hardware-inspired sound effects
+  // ------------------------------------------------------------------------
+
+  /** Soft plastic/glass stylus contact with a tiny resonant tick. */
   playStylusTap() {
     if (!this.sfxEnabled) return;
     this.ensureContext();
     if (!this.ctx) return;
 
     const now = this.ctx.currentTime;
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    const filter = this.ctx.createBiquadFilter();
-
-    filter.type = "bandpass";
-    filter.frequency.setValueAtTime(2200, now);
-    filter.Q.setValueAtTime(3.0, now);
-
-    osc.type = "sine";
-    osc.frequency.setValueAtTime(1800, now);
-    osc.frequency.exponentialRampToValueAtTime(400, now + 0.015);
-
-    gain.gain.setValueAtTime(0.3 * this.sfxVolume, now);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.018);
-
-    osc.connect(filter);
-    filter.connect(gain);
-    gain.connect(this.ctx.destination);
-
-    osc.start(now);
-    osc.stop(now + 0.02);
+    this._noiseBurst(now, 0.012, 0.16 * this.sfxVolume, "highpass", 2600, 0.9);
+    this._tone(2250, now, 0.020, 0.075 * this.sfxVolume, {
+      type: "sine", filterType: "bandpass", filterFreq: 2250, filterQ: 3.2,
+      attack: 0.001
+    });
+    this._tone(3450, now + 0.001, 0.010, 0.026 * this.sfxVolume, {
+      type: "sine", filterType: "bandpass", filterFreq: 3450, filterQ: 4,
+      attack: 0.001
+    });
   }
 
-  /**
-   * OG Nintendo DS Menu Select / Button Chirp
-   */
+  /** Bright two-part menu confirmation chirp. */
   playSelect() {
     if (!this.sfxEnabled) return;
     this.ensureContext();
     if (!this.ctx) return;
 
     const now = this.ctx.currentTime;
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-
-    osc.type = "sine";
-    osc.frequency.setValueAtTime(987.77, now); // B5
-    osc.frequency.setValueAtTime(1318.51, now + 0.035); // E6
-
-    gain.gain.setValueAtTime(0.22 * this.sfxVolume, now);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.08);
-
-    osc.connect(gain);
-    gain.connect(this.ctx.destination);
-
-    osc.start(now);
-    osc.stop(now + 0.085);
+    this._tone(987.77, now, 0.092, 0.17 * this.sfxVolume, {
+      type: "sine", attack: 0.003, endFreq: 1010, pitchTime: 0.045
+    });
+    this._tone(1318.51, now + 0.027, 0.105, 0.15 * this.sfxVolume, {
+      type: "sine", attack: 0.003, endFreq: 1302, pitchTime: 0.05
+    });
+    this._noiseBurst(now, 0.006, 0.025 * this.sfxVolume, "highpass", 5200, 1);
   }
 
-  /**
-   * OG Nintendo DS Cancel / Back Blip
-   */
+  /** Lower descending back/cancel chirp. */
   playCancel() {
     if (!this.sfxEnabled) return;
     this.ensureContext();
     if (!this.ctx) return;
 
     const now = this.ctx.currentTime;
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-
-    osc.type = "triangle";
-    osc.frequency.setValueAtTime(880, now); // A5
-    osc.frequency.setValueAtTime(587.33, now + 0.035); // D5
-
-    gain.gain.setValueAtTime(0.2 * this.sfxVolume, now);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.075);
-
-    osc.connect(gain);
-    gain.connect(this.ctx.destination);
-
-    osc.start(now);
-    osc.stop(now + 0.08);
+    this._tone(880, now, 0.105, 0.16 * this.sfxVolume, {
+      type: "sine", startFreq: 880, endFreq: 587.33, pitchTime: 0.043,
+      attack: 0.003
+    });
+    this._tone(587.33, now + 0.035, 0.070, 0.045 * this.sfxVolume, {
+      type: "triangle", attack: 0.002
+    });
   }
 
   /**
-   * OG Nintendo DS Startup Double Bell Chime
+   * Bell-like startup phrase. Multiple decaying partials give the chime
+   * a more physical, slightly metallic attack than a single sine oscillator.
    */
   playBootChime() {
     if (!this.sfxEnabled) return;
@@ -142,32 +308,32 @@ class DSAudioEngine {
     if (!this.ctx) return;
 
     const now = this.ctx.currentTime;
-    this._ringBell(1046.5, now + 0.02, 0.85, 0.35); // C6
-    this._ringBell(2093.0, now + 0.02, 0.5, 0.15);  // Octave harmonic
-    this._ringBell(2093.0, now + 0.28, 1.1, 0.45);  // High C7
-    this._ringBell(3135.9, now + 0.28, 0.7, 0.12);  // G7 shimmer
+    this._ringBell(1046.50, now + 0.018, 0.78, 0.30);
+    this._ringBell(2093.00, now + 0.265, 0.92, 0.34);
+    this._ringBell(3135.96, now + 0.285, 0.52, 0.075);
   }
 
   _ringBell(freq, time, duration, gainVal) {
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
+    if (!this.ctx) return;
 
-    osc.type = "sine";
-    osc.frequency.setValueAtTime(freq, time);
+    const partials = [
+      { ratio: 1, amp: 1, decay: 1 },
+      { ratio: 2.01, amp: 0.27, decay: 0.58 },
+      { ratio: 3.96, amp: 0.105, decay: 0.30 },
+      { ratio: 6.35, amp: 0.035, decay: 0.18 }
+    ];
 
-    gain.gain.setValueAtTime(0.0001, time);
-    gain.gain.exponentialRampToValueAtTime(gainVal * this.sfxVolume, time + 0.015);
-    gain.gain.exponentialRampToValueAtTime(0.0001, time + duration);
-
-    osc.connect(gain);
-    gain.connect(this.ctx.destination);
-
-    osc.start(time);
-    osc.stop(time + duration + 0.05);
+    for (const partial of partials) {
+      this._tone(freq * partial.ratio, time, duration * partial.decay,
+        gainVal * partial.amp * this.sfxVolume, {
+          type: "sine", attack: 0.004
+        });
+    }
   }
 
   /**
-   * Cartridge Insertion Mechanical Snap Click
+   * Cartridge insertion: finger contact, shell seating, latch snap and a tiny
+   * plastic resonance. Kept on the original playCartridgeSnap() hook.
    */
   playCartridgeSnap() {
     if (!this.sfxEnabled) return;
@@ -175,250 +341,270 @@ class DSAudioEngine {
     if (!this.ctx) return;
 
     const now = this.ctx.currentTime;
-    this._noiseClick(now, 0.018, 0.32);
-    this._noiseClick(now + 0.035, 0.028, 0.45);
+    const v = this.sfxVolume;
+
+    // Initial contact and the short scrape as the cartridge enters the slot.
+    this._noiseBurst(now, 0.009, 0.12 * v, "highpass", 3600, 1.2);
+    this._noiseSweep(now + 0.006, 0.034, 0.105 * v, 3100, 920, "bandpass");
+
+    // Main shell seat: a compact low plastic thud with a hollow mid resonance.
+    this._noiseBurst(now + 0.025, 0.021, 0.17 * v, "lowpass", 1350, 0.75);
+    this._tone(142, now + 0.024, 0.105, 0.125 * v, {
+      type: "triangle", startFreq: 220, endFreq: 112, pitchTime: 0.052,
+      filterType: "lowpass", filterFreq: 470, filterQ: 0.72, attack: 0.002
+    });
+    this._tone(465, now + 0.027, 0.062, 0.055 * v, {
+      type: "sine", startFreq: 660, endFreq: 390, pitchTime: 0.028,
+      filterType: "bandpass", filterFreq: 520, filterQ: 2.1, attack: 0.001
+    });
+
+    // Two tiny latch contacts make the mechanism feel physical, not explosive.
+    this._noiseBurst(now + 0.071, 0.010, 0.10 * v, "bandpass", 2450, 1.6);
+    this._tone(1760, now + 0.072, 0.034, 0.032 * v, {
+      type: "sine", startFreq: 2050, endFreq: 1480, pitchTime: 0.018,
+      filterType: "bandpass", filterFreq: 1750, filterQ: 3.0, attack: 0.001
+    });
+    this._noiseBurst(now + 0.096, 0.008, 0.052 * v, "highpass", 5100, 1.1);
+    this._tone(2489, now + 0.097, 0.052, 0.018 * v, {
+      type: "sine", attack: 0.0015
+    });
   }
 
-  _noiseClick(startTime, duration, vol) {
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
+  /** Soft cartridge release/open cue for interfaces that want an eject sound. */
+  playCartridgeOpen() {
+    if (!this.sfxEnabled) return;
+    this.ensureContext();
+    if (!this.ctx) return;
 
-    osc.type = "sawtooth";
-    osc.frequency.setValueAtTime(540, startTime);
-    osc.frequency.exponentialRampToValueAtTime(110, startTime + duration);
+    const now = this.ctx.currentTime;
+    const v = this.sfxVolume;
 
-    gain.gain.setValueAtTime(vol * this.sfxVolume, startTime);
-    gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
-
-    osc.connect(gain);
-    gain.connect(this.ctx.destination);
-
-    osc.start(startTime);
-    osc.stop(startTime + duration + 0.01);
+    // Spring latch release followed by the shell lifting free of the slot.
+    this._noiseBurst(now, 0.010, 0.095 * v, "bandpass", 2750, 1.5);
+    this._tone(1180, now + 0.002, 0.050, 0.040 * v, {
+      type: "sine", startFreq: 880, endFreq: 1480, pitchTime: 0.032,
+      filterType: "bandpass", filterFreq: 1280, filterQ: 2.0, attack: 0.001
+    });
+    this._noiseSweep(now + 0.018, 0.048, 0.075 * v, 900, 3200, "highpass");
+    this._tone(196, now + 0.026, 0.078, 0.060 * v, {
+      type: "triangle", startFreq: 145, endFreq: 205, pitchTime: 0.045,
+      filterType: "lowpass", filterFreq: 560, filterQ: 0.7, attack: 0.002
+    });
+    this._noiseBurst(now + 0.077, 0.008, 0.042 * v, "highpass", 4600, 1.0);
+    this._tone(1760, now + 0.078, 0.042, 0.022 * v, {
+      type: "sine", attack: 0.001
+    });
   }
 
-  /**
-   * PictoChat Send Chime
-   */
+  /** Short ascending message-send arpeggio with bell partials. */
   playPictoChatSend() {
     if (!this.sfxEnabled) return;
     this.ensureContext();
     if (!this.ctx) return;
 
     const now = this.ctx.currentTime;
-    [659.25, 783.99, 987.77, 1318.51].forEach((freq, i) => {
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-      const t = now + i * 0.04;
+    const notes = [659.25, 783.99, 987.77, 1318.51];
 
-      osc.type = "sine";
-      osc.frequency.setValueAtTime(freq, t);
-
-      gain.gain.setValueAtTime(0.2 * this.sfxVolume, t);
-      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.1);
-
-      osc.connect(gain);
-      gain.connect(this.ctx.destination);
-
-      osc.start(t);
-      osc.stop(t + 0.11);
+    notes.forEach((freq, index) => {
+      this._ringBell(freq, now + index * 0.052, 0.17, 0.115 - index * 0.012);
     });
   }
 
-  // ==========================================================================
-  // Nintendo DS Synthesized BGM Engine (128-Step Extended Soundtrack)
-  // ==========================================================================
-
-  _createNoiseBuffer() {
-    if (!this.ctx || this.noiseBuffer) return;
-    const bufferSize = Math.floor(this.ctx.sampleRate * 0.05);
-    const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
-    const data = buffer.getChannelData(0);
-    for (let i = 0; i < bufferSize; i++) {
-      data[i] = Math.random() * 2 - 1;
-    }
-    this.noiseBuffer = buffer;
-  }
+  // ------------------------------------------------------------------------
+  // BGM sound design
+  // ------------------------------------------------------------------------
 
   _initBgmBus() {
     if (this.bgmMasterGain) return;
     this.ensureContext();
     if (!this.ctx) return;
 
-    // Master Dynamics Compressor for balanced retro acoustics
-    this.bgmCompressor = this.ctx.createDynamicsCompressor();
-    this.bgmCompressor.threshold.setValueAtTime(-16, this.ctx.currentTime);
-    this.bgmCompressor.knee.setValueAtTime(10, this.ctx.currentTime);
-    this.bgmCompressor.ratio.setValueAtTime(3, this.ctx.currentTime);
-    this.bgmCompressor.attack.setValueAtTime(0.01, this.ctx.currentTime);
-    this.bgmCompressor.release.setValueAtTime(0.2, this.ctx.currentTime);
+    const now = this.ctx.currentTime;
 
-    // Warm Retro Lowpass Filter (8200Hz)
+    this.bgmCompressor = this.ctx.createDynamicsCompressor();
+    this.bgmCompressor.threshold.setValueAtTime(-17, now);
+    this.bgmCompressor.knee.setValueAtTime(12, now);
+    this.bgmCompressor.ratio.setValueAtTime(2.5, now);
+    this.bgmCompressor.attack.setValueAtTime(0.008, now);
+    this.bgmCompressor.release.setValueAtTime(0.24, now);
+
+    // Keep the direct signal clear; gently roll off the harshest top end.
     this.bgmFilter = this.ctx.createBiquadFilter();
     this.bgmFilter.type = "lowpass";
-    this.bgmFilter.frequency.setValueAtTime(8200, this.ctx.currentTime);
+    this.bgmFilter.frequency.setValueAtTime(10800, now);
+    this.bgmFilter.Q.setValueAtTime(0.55, now);
 
     this.bgmMasterGain = this.ctx.createGain();
-    this.bgmMasterGain.gain.setValueAtTime(this.bgmVolume, this.ctx.currentTime);
+    this.bgmMasterGain.gain.setValueAtTime(this.bgmVolume, now);
 
+    // A short, quiet synthetic room tail adds space without washing out notes.
+    this.bgmReverb = this.ctx.createConvolver();
+    const reverbLength = Math.floor(this.ctx.sampleRate * 1.05);
+    const impulse = this.ctx.createBuffer(2, reverbLength, this.ctx.sampleRate);
+
+    for (let channel = 0; channel < 2; channel++) {
+      const data = impulse.getChannelData(channel);
+      for (let i = 0; i < reverbLength; i++) {
+        const progress = i / reverbLength;
+        const decay = Math.pow(1 - progress, 3.2);
+        data[i] = (Math.random() * 2 - 1) * decay * 0.20;
+      }
+    }
+
+    this.bgmReverb.buffer = impulse;
+    this.bgmReverbGain = this.ctx.createGain();
+    this.bgmReverbGain.gain.setValueAtTime(0.10, now);
+
+    // Dry path.
     this.bgmMasterGain.connect(this.bgmFilter);
     this.bgmFilter.connect(this.bgmCompressor);
+
+    // Low-level wet path.
+    this.bgmMasterGain.connect(this.bgmReverb);
+    this.bgmReverb.connect(this.bgmReverbGain);
+    this.bgmReverbGain.connect(this.bgmCompressor);
+
     this.bgmCompressor.connect(this.ctx.destination);
-
-    this._createNoiseBuffer();
   }
 
-  /**
-   * Resonant Wooden Marimba Note
-   */
-  _playMarimba(freq, time, dur, velocity = 1.0) {
+  /** Rounded DS-style mallet: fast wooden attack, warm body and short inharmonic modes. */
+  _playMarimba(freq, time, dur, velocity = 1) {
     if (!freq || freq <= 0) return;
-    const osc1 = this.ctx.createOscillator();
-    const osc2 = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    const filter = this.ctx.createBiquadFilter();
 
-    filter.type = "lowpass";
-    filter.frequency.setValueAtTime(Math.min(freq * 3.6, 7500), time);
+    const v = Math.max(0, velocity);
+    const pan = ((Math.floor(time / this.stepDuration) % 4) - 1.5) * 0.055;
+    const destination = this.bgmMasterGain;
 
-    osc1.type = "sine";
-    osc1.frequency.setValueAtTime(freq, time);
-
-    osc2.type = "triangle";
-    osc2.frequency.setValueAtTime(freq * 2, time);
-
-    const vol = 0.20 * velocity;
-    gain.gain.setValueAtTime(vol, time);
-    gain.gain.exponentialRampToValueAtTime(0.0001, time + dur);
-
-    osc1.connect(gain);
-    osc2.connect(gain);
-    gain.connect(filter);
-    filter.connect(this.bgmMasterGain);
-
-    osc1.start(time);
-    osc2.start(time);
-    osc1.stop(time + dur + 0.05);
-    osc2.stop(time + dur + 0.05);
+    this._tone(freq, time, dur, 0.182 * v, {
+      type: "sine", startFreq: freq * 1.009, endFreq: freq,
+      pitchTime: 0.031, attack: 0.0018, pan, destination
+    });
+    this._tone(freq * 2.015, time, dur * 0.48, 0.047 * v, {
+      type: "sine", attack: 0.0012, pan: pan + 0.035, destination
+    });
+    this._tone(freq * 3.91, time, dur * 0.22, 0.009 * v, {
+      type: "sine", attack: 0.001, pan: pan - 0.035, destination
+    });
+    this._tone(freq * 5.37, time, 0.019, 0.0028 * v, {
+      type: "sine", attack: 0.001, destination
+    });
+    // A very quiet triangle body stops the mallet from sounding like a pure beep.
+    this._tone(freq, time + 0.003, dur * 0.56, 0.018 * v, {
+      type: "triangle", filterType: "lowpass", filterFreq: Math.min(4200, freq * 5),
+      filterQ: 0.55, attack: 0.003, pan: pan * -0.55, destination
+    });
   }
 
-  /**
-   * Deep Retro Triangle Bass
-   */
-  _playBass(freq, time, dur) {
+  /** Short plucked counter-voice for the DSi/eShop-like syncopated figures. */
+  _playPluck(freq, time, dur = 0.14, velocity = 1, pan = 0) {
     if (!freq || freq <= 0) return;
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    const filter = this.ctx.createBiquadFilter();
+    const v = Math.max(0, velocity);
+    const destination = this.bgmMasterGain;
 
-    filter.type = "lowpass";
-    filter.frequency.setValueAtTime(360, time);
-
-    osc.type = "triangle";
-    osc.frequency.setValueAtTime(freq, time);
-
-    gain.gain.setValueAtTime(0.25, time);
-    gain.gain.exponentialRampToValueAtTime(0.0001, time + dur);
-
-    osc.connect(gain);
-    gain.connect(filter);
-    filter.connect(this.bgmMasterGain);
-
-    osc.start(time);
-    osc.stop(time + dur + 0.05);
+    this._tone(freq, time, dur, 0.082 * v, {
+      type: "triangle", startFreq: freq * 1.018, endFreq: freq,
+      pitchTime: Math.min(0.045, dur * 0.42), attack: 0.0015,
+      filterType: "lowpass", filterFreq: Math.min(6200, freq * 6),
+      filterQ: 0.62, pan, destination
+    });
+    this._tone(freq * 2.006, time, dur * 0.34, 0.014 * v, {
+      type: "sine", attack: 0.001, pan: pan * -0.7, destination
+    });
   }
 
-  /**
-   * Sparkling Glockenspiel Bell Chime
-   */
-  _playChime(freq, time, dur) {
+  /** Gentle rounded low drum pulse; intentionally more felt than heard. */
+  _playKick(time, velocity = 1) {
+    const v = Math.max(0, velocity);
+    this._tone(66, time, 0.14, 0.050 * v, {
+      type: "sine", startFreq: 118, endFreq: 52, pitchTime: 0.095,
+      attack: 0.002, destination: this.bgmMasterGain
+    });
+  }
+
+  /** Glassy inharmonic bell for phrase lifts and small melodic responses. */
+  _playBell(freq, time, dur = 0.24, velocity = 1, pan = 0) {
     if (!freq || freq <= 0) return;
-    const osc1 = this.ctx.createOscillator();
-    const osc2 = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-
-    osc1.type = "sine";
-    osc1.frequency.setValueAtTime(freq, time);
-
-    osc2.type = "sine";
-    osc2.frequency.setValueAtTime(freq * 2, time);
-
-    gain.gain.setValueAtTime(0.08, time);
-    gain.gain.exponentialRampToValueAtTime(0.0001, time + dur);
-
-    osc1.connect(gain);
-    osc2.connect(gain);
-    gain.connect(this.bgmMasterGain);
-
-    osc1.start(time);
-    osc2.start(time);
-    osc1.stop(time + dur + 0.05);
-    osc2.stop(time + dur + 0.05);
+    const v = Math.max(0, velocity);
+    this._tone(freq, time, dur, 0.060 * v, {
+      type: "sine", attack: 0.002, pan, destination: this.bgmMasterGain
+    });
+    this._tone(freq * 2.01, time, dur * 0.48, 0.018 * v, {
+      type: "sine", attack: 0.0015, pan: -pan, destination: this.bgmMasterGain
+    });
+    this._tone(freq * 3.96, time, dur * 0.22, 0.0055 * v, {
+      type: "sine", attack: 0.001, destination: this.bgmMasterGain
+    });
   }
 
-  /**
-   * Retro Stylus Shaker / Brush Hi-Hat
-   */
-  _playBrush(time) {
-    if (!this.noiseBuffer) return;
-    const src = this.ctx.createBufferSource();
-    src.buffer = this.noiseBuffer;
+  /** Soft triangle/sine bass with a controlled low fundamental. */
+  _playBass(freq, time, dur, velocity = 1) {
+    if (!freq || freq <= 0) return;
+    const v = Math.max(0, velocity);
 
-    const filter = this.ctx.createBiquadFilter();
-    filter.type = "highpass";
-    filter.frequency.setValueAtTime(6800, time);
-    filter.Q.setValueAtTime(2.2, time);
-
-    const gain = this.ctx.createGain();
-    gain.gain.setValueAtTime(0.032, time);
-    gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.024);
-
-    src.connect(filter);
-    filter.connect(gain);
-    gain.connect(this.bgmMasterGain);
-
-    src.start(time);
-    src.stop(time + 0.03);
+    this._tone(freq, time, dur, 0.16 * v, {
+      type: "triangle", startFreq: freq * 1.008, endFreq: freq,
+      pitchTime: 0.055, attack: 0.005, filterType: "lowpass",
+      filterFreq: 520, filterQ: 0.65, destination: this.bgmMasterGain
+    });
+    this._tone(freq / 2, time, dur * 0.82, 0.032 * v, {
+      type: "sine", attack: 0.008, destination: this.bgmMasterGain
+    });
   }
 
-  /**
-   * Hollow Retro Woodblock Tap
-   */
-  _playWoodblock(time) {
-    const osc = this.ctx.createOscillator();
-    const gain = this.ctx.createGain();
-    const filter = this.ctx.createBiquadFilter();
-
-    filter.type = "bandpass";
-    filter.frequency.setValueAtTime(820, time);
-    filter.Q.setValueAtTime(4.0, time);
-
-    osc.type = "sine";
-    osc.frequency.setValueAtTime(950, time);
-    osc.frequency.exponentialRampToValueAtTime(460, time + 0.022);
-
-    gain.gain.setValueAtTime(0.07, time);
-    gain.gain.exponentialRampToValueAtTime(0.0001, time + 0.035);
-
-    osc.connect(filter);
-    filter.connect(gain);
-    gain.connect(this.bgmMasterGain);
-
-    osc.start(time);
-    osc.stop(time + 0.04);
+  /** Small, glassy accent bell used sparingly above the lead instrument. */
+  _playChime(freq, time, dur, velocity = 1) {
+    if (!freq || freq <= 0) return;
+    this._tone(freq, time, dur, 0.075 * velocity, {
+      type: "sine", attack: 0.003, destination: this.bgmMasterGain
+    });
+    this._tone(freq * 2.01, time, dur * 0.42, 0.015 * velocity, {
+      type: "sine", attack: 0.002, destination: this.bgmMasterGain
+    });
   }
 
-  /**
-   * Web Audio Lookahead Scheduler
-   */
+  /** Quiet filtered-noise shaker, closer to a soft sampled tick than hiss. */
+  _playBrush(time, velocity = 1) {
+    this._noiseBurst(time, 0.026, 0.012 * velocity, "highpass", 6200, 0.75,
+      this.bgmMasterGain);
+  }
+
+  /** Short hollow wooden tick for the gentle backbeat. */
+  _playWoodblock(time, velocity = 1) {
+    this._tone(520, time, 0.043, 0.040 * velocity, {
+      type: "sine", startFreq: 980, endFreq: 520, pitchTime: 0.018,
+      filterType: "bandpass", filterFreq: 850, filterQ: 3.2,
+      attack: 0.001, destination: this.bgmMasterGain
+    });
+  }
+
+  /** Soft chord bed, used only at phrase boundaries. */
+  _playChordPad(midiNotes, time, duration, velocity = 1) {
+    for (let i = 0; i < midiNotes.length; i++) {
+      this._tone(this._midiToFreq(midiNotes[i]), time, duration,
+        0.022 * velocity, {
+          type: "triangle", attack: 0.075, pan: (i - 1.5) * 0.10,
+          filterType: "lowpass", filterFreq: 1750, filterQ: 0.55,
+          destination: this.bgmMasterGain
+        });
+    }
+  }
+
+  // ------------------------------------------------------------------------
+  // 128-step lookahead scheduler
+  // ------------------------------------------------------------------------
+
   _scheduleAhead() {
     if (!this.bgmEnabled || !this.ctx) return;
 
-    // Schedule events up to 0.12s in advance
-    while (this.nextStepTime < this.ctx.currentTime + 0.12) {
-      this._playStep(this.bgmStep, this.nextStepTime);
+    const lookahead = 0.18;
+    while (this.nextStepTime < this.ctx.currentTime + lookahead) {
+      this._playStep(this.bgmStep, this.nextStepTime, this.bgmLoop);
       this.nextStepTime += this.stepDuration;
-      this.bgmStep = (this.bgmStep + 1) % 128;
+      this.bgmStep += 1;
+      if (this.bgmStep >= 128) {
+        this.bgmStep = 0;
+        this.bgmLoop += 1;
+      }
     }
 
     if (this.bgmEnabled) {
@@ -426,142 +612,166 @@ class DSAudioEngine {
     }
   }
 
-  _playStep(step, time) {
-    // 128-step Multi-part melody (C Major / A Minor)
-    const melody = [
-      // ================= Section 1: Main Theme A (DSi Shop Stroll - 32 steps) =================
-      { f: 587.33, d: 0.18, v: 0.9 }, { f: 659.25, d: 0.16, v: 0.8 }, { f: 783.99, d: 0.22, v: 1.0 }, { f: 987.77, d: 0.18, v: 0.85 },
-      { f: 880.00, d: 0.16, v: 0.8 }, { f: 783.99, d: 0.16, v: 0.8 }, { f: 659.25, d: 0.24, v: 0.95 }, { f: 587.33, d: 0.18, v: 0.75 },
-      { f: 523.25, d: 0.18, v: 0.9 }, { f: 659.25, d: 0.16, v: 0.8 }, { f: 880.00, d: 0.22, v: 1.0 }, { f: 1046.50, d: 0.20, v: 0.9 },
-      { f: 987.77, d: 0.18, v: 0.85 }, { f: 783.99, d: 0.18, v: 0.8 }, { f: 659.25, d: 0.24, v: 0.9 }, { f: 587.33, d: 0.18, v: 0.75 },
-      { f: 587.33, d: 0.18, v: 0.85 }, { f: 698.46, d: 0.16, v: 0.8 }, { f: 880.00, d: 0.20, v: 0.95 }, { f: 987.77, d: 0.18, v: 0.85 },
-      { f: 1046.50, d: 0.22, v: 1.0 }, { f: 987.77, d: 0.18, v: 0.85 }, { f: 880.00, d: 0.18, v: 0.8 }, { f: 698.46, d: 0.18, v: 0.75 },
-      { f: 783.99, d: 0.22, v: 0.95 }, { f: 587.33, d: 0.16, v: 0.8 }, { f: 659.25, d: 0.18, v: 0.85 }, { f: 783.99, d: 0.20, v: 0.9 },
-      { f: 0, d: 0.10, v: 0 }, { f: 880.00, d: 0.18, v: 0.85 }, { f: 987.77, d: 0.22, v: 0.95 }, { f: 0, d: 0.10, v: 0 },
+  _variation(loop, step, salt = 0) {
+    // Small deterministic hash: variation stays musical and reproducible within a loop.
+    let x = Math.imul((loop + 1) ^ Math.imul(step + 17, 0x45d9f3b), 0x27d4eb2d);
+    x ^= Math.imul(salt + 31, 0x165667b1);
+    x = Math.imul(x ^ (x >>> 15), 0x2c1b3c6d);
+    x = Math.imul(x ^ (x >>> 12), 0x297a2d39);
+    x ^= x >>> 15;
+    return (x >>> 0) / 4294967296;
+  }
 
-      // ================= Section 2: Theme B (Sunshine High Octave & Chimes - 32 steps) =================
-      { f: 1046.50, d: 0.22, v: 1.0 }, { f: 0, d: 0.10, v: 0 }, { f: 987.77, d: 0.18, v: 0.85 }, { f: 783.99, d: 0.18, v: 0.8 },
-      { f: 880.00, d: 0.20, v: 0.9 }, { f: 0, d: 0.10, v: 0 }, { f: 783.99, d: 0.18, v: 0.8 }, { f: 659.25, d: 0.22, v: 0.85 },
-      { f: 783.99, d: 0.18, v: 0.85 }, { f: 880.00, d: 0.18, v: 0.85 }, { f: 1046.50, d: 0.20, v: 0.95 }, { f: 1174.66, d: 0.22, v: 1.0 },
-      { f: 1046.50, d: 0.22, v: 0.9 }, { f: 0, d: 0.10, v: 0 }, { f: 880.00, d: 0.18, v: 0.8 }, { f: 783.99, d: 0.18, v: 0.75 },
-      { f: 698.46, d: 0.18, v: 0.85 }, { f: 880.00, d: 0.18, v: 0.85 }, { f: 1046.50, d: 0.20, v: 0.95 }, { f: 1318.51, d: 0.24, v: 1.0 },
-      { f: 1174.66, d: 0.22, v: 0.9 }, { f: 0, d: 0.10, v: 0 }, { f: 1046.50, d: 0.18, v: 0.85 }, { f: 880.00, d: 0.18, v: 0.8 },
-      { f: 987.77, d: 0.20, v: 0.9 }, { f: 0, d: 0.10, v: 0 }, { f: 783.99, d: 0.18, v: 0.8 }, { f: 880.00, d: 0.18, v: 0.85 },
-      { f: 783.99, d: 0.18, v: 0.8 }, { f: 659.25, d: 0.18, v: 0.8 }, { f: 587.33, d: 0.18, v: 0.75 }, { f: 523.25, d: 0.22, v: 0.85 },
+  _playStep(step, time, loop = 0) {
+    const phrase = Math.floor(step / 16);
+    const localStep = step % 16;
+    const section = Math.floor(step / 32); // A: bright, B: sparkling, C: airy, D: playful fill
+    const loopStyle = loop % 4;
+    const chord = this.chords[phrase];
+    let note = this.melody[step];
 
-      // ================= Section 3: Theme C (PictoChat Dreamy Arpeggios - 32 steps) =================
-      { f: 659.25, d: 0.20, v: 0.9 }, { f: 783.99, d: 0.18, v: 0.85 }, { f: 987.77, d: 0.20, v: 0.9 }, { f: 1318.51, d: 0.24, v: 1.0 },
-      { f: 1174.66, d: 0.20, v: 0.9 }, { f: 987.77, d: 0.18, v: 0.85 }, { f: 783.99, d: 0.18, v: 0.8 }, { f: 659.25, d: 0.22, v: 0.85 },
-      { f: 523.25, d: 0.20, v: 0.85 }, { f: 659.25, d: 0.18, v: 0.8 }, { f: 880.00, d: 0.20, v: 0.9 }, { f: 1046.50, d: 0.22, v: 0.95 },
-      { f: 987.77, d: 0.18, v: 0.85 }, { f: 880.00, d: 0.18, v: 0.8 }, { f: 659.25, d: 0.20, v: 0.85 }, { f: 523.25, d: 0.22, v: 0.8 },
-      { f: 587.33, d: 0.20, v: 0.85 }, { f: 698.46, d: 0.18, v: 0.8 }, { f: 880.00, d: 0.20, v: 0.9 }, { f: 1174.66, d: 0.24, v: 1.0 },
-      { f: 1046.50, d: 0.20, v: 0.9 }, { f: 880.00, d: 0.18, v: 0.85 }, { f: 698.46, d: 0.18, v: 0.8 }, { f: 587.33, d: 0.22, v: 0.8 },
-      { f: 783.99, d: 0.20, v: 0.9 }, { f: 987.77, d: 0.18, v: 0.85 }, { f: 1174.66, d: 0.20, v: 0.95 }, { f: 1396.91, d: 0.22, v: 1.0 },
-      { f: 1318.51, d: 0.22, v: 0.95 }, { f: 1174.66, d: 0.20, v: 0.9 }, { f: 987.77, d: 0.18, v: 0.85 }, { f: 783.99, d: 0.22, v: 0.85 },
+    // The lead changes subtly on repeat passes so the 27-second loop does not feel static.
+    if (note !== null && note !== undefined) {
+      if (loopStyle === 1 && (localStep === 6 || localStep === 14) && section !== 2) note -= 12;
+      if (loopStyle === 2 && (localStep === 3 || localStep === 11) && section === 1) note += 12;
+      if (loopStyle === 3 && (localStep === 7 || localStep === 15) && section === 3) note += 12;
 
-      // ================= Section 4: Theme D (Joyful Staccato Breakdown & Turnaround - 32 steps) =================
-      { f: 523.25, d: 0.16, v: 0.9 }, { f: 523.25, d: 0.16, v: 0.85 }, { f: 659.25, d: 0.18, v: 0.9 }, { f: 783.99, d: 0.20, v: 0.95 },
-      { f: 1046.50, d: 0.18, v: 1.0 }, { f: 1046.50, d: 0.18, v: 0.9 }, { f: 987.77, d: 0.18, v: 0.85 }, { f: 880.00, d: 0.20, v: 0.9 },
-      { f: 587.33, d: 0.16, v: 0.85 }, { f: 587.33, d: 0.16, v: 0.8 }, { f: 698.46, d: 0.18, v: 0.9 }, { f: 880.00, d: 0.20, v: 0.95 },
-      { f: 1174.66, d: 0.18, v: 1.0 }, { f: 1174.66, d: 0.18, v: 0.9 }, { f: 1046.50, d: 0.18, v: 0.85 }, { f: 987.77, d: 0.20, v: 0.9 },
-      { f: 659.25, d: 0.18, v: 0.9 }, { f: 783.99, d: 0.18, v: 0.9 }, { f: 1046.50, d: 0.20, v: 0.95 }, { f: 1318.51, d: 0.22, v: 1.0 },
-      { f: 1174.66, d: 0.18, v: 0.9 }, { f: 1046.50, d: 0.18, v: 0.85 }, { f: 987.77, d: 0.18, v: 0.85 }, { f: 880.00, d: 0.20, v: 0.9 },
-      { f: 783.99, d: 0.16, v: 0.85 }, { f: 880.00, d: 0.16, v: 0.85 }, { f: 987.77, d: 0.18, v: 0.9 }, { f: 1046.50, d: 0.18, v: 0.95 },
-      { f: 1174.66, d: 0.20, v: 1.0 }, { f: 1318.51, d: 0.22, v: 1.05 }, { f: 1567.98, d: 0.24, v: 1.1 }, { f: 1046.50, d: 0.28, v: 1.0 }
-    ];
-
-    // 64-step walking bassline (each note plays for 2 steps / 1 beat)
-    const bass = [
-      // S1 Bass (C -> Am -> F -> G)
-      130.81, 196.00, 220.00, 164.81, 174.61, 261.63, 196.00, 146.83,
-      130.81, 196.00, 220.00, 164.81, 174.61, 261.63, 196.00, 246.94,
-
-      // S2 Bass (F -> G -> Em -> Am -> Dm -> G -> C)
-      174.61, 261.63, 196.00, 293.66, 164.81, 246.94, 220.00, 164.81,
-      146.83, 220.00, 196.00, 293.66, 130.81, 196.00, 130.81, 196.00,
-
-      // S3 Bass (Dreamy descending walk)
-      130.81, 196.00, 246.94, 196.00, 220.00, 164.81, 196.00, 146.83,
-      174.61, 261.63, 164.81, 246.94, 146.83, 220.00, 196.00, 246.94,
-
-      // S4 Bass (Energetic Turnaround)
-      130.81, 164.81, 146.83, 174.61, 164.81, 196.00, 174.61, 220.00,
-      146.83, 174.61, 196.00, 246.94, 130.81, 164.81, 196.00, 196.00
-    ];
-
-    // 1. Play Lead Marimba
-    const note = melody[step];
-    if (note && note.f > 0) {
-      this._playMarimba(note.f, time, note.d, note.v);
+      const leadVelocity = (localStep === 0 || localStep === 8 ? 0.94 : 0.80) *
+        (section === 2 ? 0.78 : section === 3 ? 0.86 : 0.90);
+      const leadDuration = section === 3 ? 0.158 : section === 2 ? 0.172 : 0.188;
+      this._playMarimba(this._midiToFreq(note), time, leadDuration, leadVelocity);
     }
 
-    // 2. Play Bass (on every 2 steps)
+    // Walking bass with a little variation in the last beat of each two-bar phrase.
     if (step % 2 === 0) {
-      const bassIndex = Math.floor(step / 2) % bass.length;
-      this._playBass(bass[bassIndex], time, 0.36);
+      const beat = Math.floor(localStep / 2);
+      let bassNote = this.bassPatterns[phrase][beat];
+      if (loopStyle === 2 && beat === 7 && this._variation(loop, step, 2) > 0.68) bassNote -= 12;
+      this._playBass(this._midiToFreq(bassNote), time, section === 2 ? 0.32 : 0.37,
+        beat === 0 || beat === 4 ? 1 : 0.78);
     }
 
-    // 3. Play Counter-Chimes on melodic accents
-    const chimeTable = {
-      // S2 Sparkles
-      34: 1567.98, 38: 1760.00, 42: 2093.00, 46: 1760.00,
-      50: 1567.98, 54: 1318.51, 58: 1760.00, 62: 2093.00,
-      // S3 Atmospheric echoes
-      66: 1318.51, 70: 1567.98, 74: 1760.00, 78: 1318.51,
-      82: 1174.66, 86: 1318.51, 90: 1567.98, 94: 1760.00,
-      // S4 Turnaround fanfare
-      96: 1046.50, 100: 1174.66, 104: 1318.51, 108: 1396.91,
-      112: 1567.98, 116: 1760.00, 120: 1975.53, 124: 2093.00
-    };
-    if (chimeTable[step]) {
-      this._playChime(chimeTable[step], time, 0.38);
+    // Soft chord bloom at phrase starts; the second half gets a shorter answer.
+    if (localStep === 0) {
+      this._playChordPad(chord, time, 1.02, section === 2 ? 0.78 : 1);
+      if (section === 1 || section === 3) {
+        const upper = chord.map((n) => n + 12);
+        this._playChordPad(upper.slice(0, 3), time + 0.012, 0.56, 0.22);
+      }
+    } else if (localStep === 8) {
+      this._playChordPad(chord, time, 0.52, 0.34);
     }
 
-    // 4. Subtle Shaker / Brush on off-beats
-    if (step % 2 === 1) {
-      this._playBrush(time);
+    // Repeating but changing arpeggio density: the airy C section deliberately breathes.
+    const arpSlots = section === 1 ? [2, 6, 10, 14] :
+      section === 2 ? [6, 14] : section === 3 ? [2, 10, 14] : [2, 10];
+    if (arpSlots.includes(localStep)) {
+      const chordIndex = (Math.floor(localStep / 4) + phrase + loopStyle) % chord.length;
+      const arpNote = chord[chordIndex] + (section === 1 ? 24 : 12);
+      const arpTime = time + (localStep % 4 === 2 ? this.stepDuration * 0.08 : 0);
+      this._playPluck(this._midiToFreq(arpNote), arpTime,
+        section === 3 ? 0.095 : 0.125,
+        section === 2 ? 0.42 : 0.60,
+        ((step % 3) - 1) * 0.22);
     }
 
-    // 5. Woodblock tap on turnaround accents (Section 4)
-    if (step >= 96 && (step % 4 === 2)) {
-      this._playWoodblock(time);
+    // High counter-line: denser in the sparkling section, sparse in the dreamy one.
+    // Chord-specific counter notes: every pitch is a chord tone, avoiding
+    // the old fixed high line that created #11 / semitone clashes on F and G7.
+    // Notes land in spaces between lead attacks and are short enough not to smear.
+    const counterPatterns = [
+      [null, 91, null, null, null, 88, null, null], // Cmaj7: G, E
+      [null, 88, null, null, null, 84, null, null], // Am7: E, C
+      [null, 88, null, null, null, 84, null, null], // Fmaj7: E, C
+      [null, 86, null, null, null, 83, null, null], // G6: D, B
+      [null, 88, null, null, null, 86, null, null], // Em7: E, D
+      [null, 88, null, null, null, 84, null, null], // Am7: E, C
+      [null, 86, null, null, null, 84, null, null], // Dm7: D, C
+      [null, 89, null, null, null, 86, null, null]  // G7: F, D
+    ];
+    const counterNote = counterPatterns[phrase][step % 8];
+    const counterChance = section === 1 ? 0.74 : section === 3 ? 0.62 : 0.56;
+    if (counterNote && this._variation(loop, step, 5) < counterChance) {
+      // Octave changes preserve harmony while giving later loops a gentle lift.
+      const octave = loopStyle === 2 && step % 16 === 5 ? -12 : 0;
+      this._playBell(this._midiToFreq(counterNote + octave), time + 0.008,
+        0.145, section === 2 ? 0.28 : 0.34,
+        step % 2 ? 0.20 : -0.18);
+    }
+
+    // Phrase-end glints use chord tones only; variation changes octave, never key.
+    if (localStep === 14 && (phrase === 1 || phrase === 3 || phrase === 5 || phrase === 7)) {
+      const sparkleNotes = [null, 88, null, 86, null, 93, null, 89];
+      let sparkle = sparkleNotes[phrase];
+      if (loopStyle === 1) sparkle += 12;
+      if (loopStyle === 3) sparkle -= 12;
+      this._playChime(this._midiToFreq(sparkle), time + 0.018, 0.205, 0.25);
+    }
+
+    // Gentle rhythm: soft low pulse, woody taps and a light noise shaker.
+    if (localStep === 0 || (localStep === 8 && section !== 2)) {
+      this._playKick(time, localStep === 0 ? 0.80 : 0.43);
+    }
+    if (localStep % 8 === 2 || localStep % 8 === 6) {
+      this._playBrush(time + 0.006, localStep === 6 ? 0.58 : 0.44);
+    }
+    if (localStep === 4 || (section === 3 && localStep === 12)) {
+      this._playWoodblock(time, section === 3 ? 0.46 : 0.34);
+    }
+
+    // Tiny end-of-section fills make each 8-bar movement feel like an arrangement.
+    if (localStep === 12 && (section === 1 || section === 3)) {
+      const fill = chord[(phrase + loopStyle) % chord.length] + 24;
+      this._playPluck(this._midiToFreq(fill), time + this.stepDuration * 0.48,
+        0.12, 0.36, 0.20);
+    }
+    if (step % 32 === 31) {
+      const turnaround = chord[(loopStyle + section) % chord.length] + 24;
+      this._playBell(this._midiToFreq(turnaround), time + 0.035, 0.22, 0.44, -0.18);
     }
   }
 
-  /**
-   * Smooth, Nostalgic Nintendo DSi / Wii Shop Chill Marimba Theme
-   * 100% royalty-free & synthesized natively with Web Audio oscillators.
-   */
+  /** Start/stop the BGM. Return value remains true when started, false when stopped. */
   toggleBGM() {
     this.ensureContext();
+    if (!this.ctx) return false;
 
     if (this.bgmEnabled) {
       this.bgmEnabled = false;
+
       if (this.bgmTimer) {
         clearTimeout(this.bgmTimer);
         this.bgmTimer = null;
       }
-      if (this.bgmMasterGain && this.ctx) {
-        // Quick 50ms fade-out to prevent pop/click
-        this.bgmMasterGain.gain.setValueAtTime(this.bgmMasterGain.gain.value, this.ctx.currentTime);
-        this.bgmMasterGain.gain.exponentialRampToValueAtTime(0.0001, this.ctx.currentTime + 0.05);
+
+      if (this.bgmMasterGain) {
+        const now = this.ctx.currentTime;
+        this.bgmMasterGain.gain.cancelScheduledValues(now);
+        this.bgmMasterGain.gain.setValueAtTime(
+          Math.max(0.0001, this.bgmMasterGain.gain.value), now
+        );
+        this.bgmMasterGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.065);
       }
+
       return false;
     }
 
     this._initBgmBus();
-    if (!this.ctx) return false;
+    if (!this.bgmMasterGain) return false;
 
-    // Reset gain to normal volume
-    this.bgmMasterGain.gain.setValueAtTime(this.bgmVolume, this.ctx.currentTime);
+    const now = this.ctx.currentTime;
+    this.bgmMasterGain.gain.cancelScheduledValues(now);
+    this.bgmMasterGain.gain.setValueAtTime(0.0001, now);
+    this.bgmMasterGain.gain.linearRampToValueAtTime(this.bgmVolume, now + 0.055);
 
     this.bgmEnabled = true;
     this.bgmStep = 0;
-    this.nextStepTime = this.ctx.currentTime + 0.05;
+    this.bgmLoop = 0;
+    this.nextStepTime = now + 0.055;
     this._scheduleAhead();
-
     return true;
   }
 }
 
+// Keep this global exactly as before so existing site code remains compatible.
 window.dsAudio = new DSAudioEngine();
